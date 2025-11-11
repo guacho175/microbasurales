@@ -176,6 +176,8 @@
     const modal = modalDenuncia ? new bootstrap.Modal(modalDenuncia) : null;
     const totalDenunciasBadge = document.getElementById('totalDenuncias');
     const sinDenunciasMensaje = document.getElementById('sinDenuncias');
+    const latitudInput = document.getElementById('latitud');
+    const longitudInput = document.getElementById('longitud');
     const ESTADOS_LABEL = {
         pendiente: 'Pendiente',
         en_proceso: 'En proceso',
@@ -212,8 +214,10 @@
             marker = L.marker([latitud, longitud]).addTo(map);
         }
         map.setView([latitud, longitud], 15);
-        document.getElementById('latitud').value = latitud.toFixed(6);
-        document.getElementById('longitud').value = longitud.toFixed(6);
+        if (latitudInput && longitudInput) {
+            latitudInput.value = latitud.toFixed(6);
+            longitudInput.value = longitud.toFixed(6);
+        }
     }
 
     map.on('click', function (event) {
@@ -293,7 +297,9 @@
         }
 
         try {
-            const respuesta = await fetch('/api/denuncias/mis/');
+            const respuesta = await fetch('/api/denuncias/mis/', {
+                credentials: 'include',
+            });
 
             if (!respuesta.ok) {
                 throw new Error('No se pudieron obtener tus denuncias.');
@@ -320,66 +326,101 @@
         }
     }
 
-    if (formDenuncia) {
-        formDenuncia.addEventListener('submit', async function (event) {
-            event.preventDefault();
-            const latitud = document.getElementById('latitud').value;
-            const longitud = document.getElementById('longitud').value;
-            if (!latitud || !longitud) {
-                mostrarAlerta('Debes seleccionar una ubicación en el mapa.', 'danger');
+    async function enviarDenuncia() {
+        if (!formDenuncia) {
+            return;
+        }
+
+        const latitud = latitudInput ? latitudInput.value : '';
+        const longitud = longitudInput ? longitudInput.value : '';
+
+        if (!latitud || !longitud) {
+            mostrarAlerta('Debes seleccionar una ubicación en el mapa.', 'danger');
+            return;
+        }
+
+        const formData = new FormData(formDenuncia);
+        const csrfToken = formDenuncia.querySelector('input[name="csrfmiddlewaretoken"]').value;
+
+        try {
+            const respuesta = await fetch('/api/denuncias/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                },
+                body: formData,
+                credentials: 'include',
+            });
+
+            if (!respuesta.ok) {
+                const errorData = await respuesta.json().catch(() => ({}));
+                let mensajeError = errorData?.detail;
+                if (!mensajeError && errorData && typeof errorData === 'object') {
+                    const firstErrorKey = Object.keys(errorData)[0];
+                    if (firstErrorKey) {
+                        const rawError = errorData[firstErrorKey];
+                        if (Array.isArray(rawError) && rawError.length > 0) {
+                            mensajeError = rawError[0];
+                        } else if (typeof rawError === 'string') {
+                            mensajeError = rawError;
+                        }
+                    }
+                }
+                if (!mensajeError) {
+                    mensajeError = 'No se pudo registrar la denuncia. Revisa los datos ingresados.';
+                }
+                mostrarAlerta(mensajeError, 'danger');
                 return;
             }
 
-            const formData = new FormData(formDenuncia);
-            const csrfToken = formDenuncia.querySelector('input[name="csrfmiddlewaretoken"]').value;
+            const data = await respuesta.json();
+            agregarDenunciaATabla(data);
+            formDenuncia.reset();
+            if (marker) {
+                map.removeLayer(marker);
+                marker = null;
+            }
+            if (latitudInput) {
+                latitudInput.value = '';
+            }
+            if (longitudInput) {
+                longitudInput.value = '';
+            }
+            if (modal) {
+                modal.hide();
+            }
+            mostrarAlerta('¡Denuncia registrada correctamente! Puedes verla en la tabla inferior.');
+        } catch (error) {
+            console.error(error);
+            mostrarAlerta('Ocurrió un error inesperado. Inténtalo nuevamente.', 'danger');
+        }
+    }
 
-            try {
-                const respuesta = await fetch('/api/denuncias/', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': csrfToken,
-                    },
-                    body: formData,
-                });
+    if (formDenuncia) {
+        formDenuncia.addEventListener('submit', function (event) {
+            event.preventDefault();
 
-                if (!respuesta.ok) {
-                    const errorData = await respuesta.json().catch(() => ({}));
-                    let mensajeError = errorData?.detail;
-                    if (!mensajeError && errorData && typeof errorData === 'object') {
-                        const firstErrorKey = Object.keys(errorData)[0];
-                        if (firstErrorKey) {
-                            const rawError = errorData[firstErrorKey];
-                            if (Array.isArray(rawError) && rawError.length > 0) {
-                                mensajeError = rawError[0];
-                            } else if (typeof rawError === 'string') {
-                                mensajeError = rawError;
-                            }
-                        }
-                    }
-                    if (!mensajeError) {
-                        mensajeError = 'No se pudo registrar la denuncia. Revisa los datos ingresados.';
-                    }
-                    mostrarAlerta(mensajeError, 'danger');
+            if (!navigator.geolocation) {
+                if (!latitudInput?.value || !longitudInput?.value) {
+                    mostrarAlerta('Tu navegador no soporta geolocalización. Selecciona la ubicación manualmente.', 'danger');
                     return;
                 }
-
-                const data = await respuesta.json();
-                agregarDenunciaATabla(data);
-                formDenuncia.reset();
-                if (marker) {
-                    map.removeLayer(marker);
-                    marker = null;
-                }
-                document.getElementById('latitud').value = '';
-                document.getElementById('longitud').value = '';
-                mostrarAlerta('¡Denuncia registrada correctamente! Puedes verla en la tabla inferior.');
-                if (modal) {
-                    modal.hide();
-                }
-            } catch (error) {
-                console.error(error);
-                mostrarAlerta('Ocurrió un error inesperado. Inténtalo nuevamente.', 'danger');
+                enviarDenuncia();
+                return;
             }
+
+            navigator.geolocation.getCurrentPosition(pos => {
+                document.querySelector('#latitud').value = pos.coords.latitude;
+                document.querySelector('#longitud').value = pos.coords.longitude;
+                actualizarMarcador(pos.coords.latitude, pos.coords.longitude);
+                enviarDenuncia();
+            }, () => {
+                if (!latitudInput?.value || !longitudInput?.value) {
+                    mostrarAlerta('No pudimos obtener tu ubicación automáticamente. Selecciónala manualmente en el mapa.', 'warning');
+                    return;
+                }
+                enviarDenuncia();
+            });
         });
     }
 

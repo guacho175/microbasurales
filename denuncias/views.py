@@ -1,37 +1,53 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .models import Denuncia
-from .serializers import CrearDenunciaSerializer, DenunciaSerializer
+from .serializers import DenunciaSerializer
 
 
-class DenunciaListCreateView(generics.ListCreateAPIView):
+class DenunciaListCreateView(APIView):
     """Permite listar todas las denuncias y crear nuevas denuncias."""
 
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
-        return Denuncia.objects.all().order_by("-fecha_creacion")
-
-    def get_serializer_class(self):
-        if self.request.method == "POST":
-            return CrearDenunciaSerializer
-        return DenunciaSerializer
-
-    def perform_create(self, serializer):
-        serializer.save(usuario=self.request.user)
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        denuncia = serializer.save(usuario=request.user)
-        response_serializer = DenunciaSerializer(
-            denuncia, context={"request": request}
+    def get(self, request, *args, **kwargs):
+        queryset = Denuncia.objects.all().order_by("-fecha_creacion")
+        serializer = DenunciaSerializer(
+            queryset, many=True, context={"request": request}
         )
-        headers = self.get_success_headers(response_serializer.data)
-        return Response(
-            response_serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        return Response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+        descripcion = request.data.get("descripcion", "").strip()
+        latitud = request.data.get("latitud")
+        longitud = request.data.get("longitud")
+
+        if not descripcion:
+            return Response(
+                {"descripcion": ["Este campo es requerido."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            latitud_valor = float(latitud)
+            longitud_valor = float(longitud)
+        except (TypeError, ValueError):
+            return Response(
+                {"ubicacion": ["Debes proporcionar una ubicación válida."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        denuncia = Denuncia.objects.create(
+            usuario=request.user,
+            descripcion=descripcion,
+            imagen=request.FILES.get("imagen"),
+            latitud=latitud_valor,
+            longitud=longitud_valor,
         )
+
+        serializer = DenunciaSerializer(denuncia, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class MisDenunciasListView(generics.ListAPIView):
