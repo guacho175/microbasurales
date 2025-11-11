@@ -15,6 +15,7 @@ class DenunciaSerializer(serializers.ModelSerializer):
             "descripcion",
             "direccion",
             "zona",
+            "direccion_textual",
             "estado",
             "estado_display",
             "fecha_creacion",
