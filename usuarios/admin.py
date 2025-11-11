@@ -3,7 +3,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import UserChangeForm, UserCreationForm
-
 from .models import Usuario
 
 
@@ -26,10 +25,19 @@ class UsuarioChangeForm(UserChangeForm):
 
     class Meta(UserChangeForm.Meta):
         model = Usuario
-        fields = UserChangeForm.Meta.fields + (
+        fields = (
+            "username",
+            "email",
+            "first_name",
+            "last_name",
             "rol",
             "telefono",
             "direccion",
+            "is_active",
+            "is_staff",
+            "is_superuser",
+            "groups",
+            "user_permissions",
         )
 
 
