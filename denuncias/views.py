@@ -1,107 +1,63 @@
-# ================================
-#   IMPORTS API REST
-# ================================
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Denuncia
-from .serializers import (
-    DenunciaSerializer,
-    CrearDenunciaSerializer
-)
+from .serializers import DenunciaSerializer
 
-# ================================
-#   API REST DE DENUNCIAS
-# ================================
 
-# ✅ 1. Crear denuncia (usuario autenticado)
-class CrearDenunciaView(generics.CreateAPIView):
-    serializer_class = CrearDenunciaSerializer
+class DenunciaListCreateView(APIView):
+    """Permite listar todas las denuncias y crear nuevas denuncias."""
+
     permission_classes = [permissions.IsAuthenticated]
 
-    def perform_create(self, serializer):
-        serializer.save(usuario=self.request.user)
+    def get(self, request, *args, **kwargs):
+        queryset = Denuncia.objects.all().order_by("-fecha_creacion")
+        serializer = DenunciaSerializer(
+            queryset, many=True, context={"request": request}
+        )
+        return Response(serializer.data)
 
+    def post(self, request, *args, **kwargs):
+        descripcion = request.data.get("descripcion", "").strip()
+        latitud = request.data.get("latitud")
+        longitud = request.data.get("longitud")
 
-# ✅ 2. Listar todas las denuncias (público o autenticado)
-class ListarDenunciasView(generics.ListAPIView):
-    queryset = Denuncia.objects.all().order_by('-fecha_creacion')
-    serializer_class = DenunciaSerializer
-
-
-# ✅ 3. Obtener / actualizar / eliminar denuncia por ID
-class DenunciaDetalleView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Denuncia.objects.all()
-    serializer_class = DenunciaSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    # ✅ Solo el usuario dueño puede editar
-    def put(self, request, *args, **kwargs):
-        denuncia = self.get_object()
-        if denuncia.usuario != request.user:
+        if not descripcion:
             return Response(
-                {"error": "No puedes editar esta denuncia."},
-                status=status.HTTP_403_FORBIDDEN
+                {"descripcion": ["Este campo es requerido."]},
+                status=status.HTTP_400_BAD_REQUEST,
             )
-        return super().put(request, *args, **kwargs)
 
-
-# ✅ 4. Cambiar estado (solo fiscalizadores o admin)
-class CambiarEstadoView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def patch(self, request, pk):
         try:
-            denuncia = Denuncia.objects.get(pk=pk)
-        except Denuncia.DoesNotExist:
+            latitud_valor = float(latitud)
+            longitud_valor = float(longitud)
+        except (TypeError, ValueError):
             return Response(
-                {"error": "Denuncia no encontrada."},
-                status=status.HTTP_404_NOT_FOUND
+                {"ubicacion": ["Debes proporcionar una ubicación válida."]},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # ✅ Verificar rol
-        if not hasattr(request.user, "rol") or request.user.rol not in ['fiscalizador', 'administrador']:
-            return Response(
-                {"error": "No tienes permisos para cambiar estados."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        denuncia = Denuncia.objects.create(
+            usuario=request.user,
+            descripcion=descripcion,
+            imagen=request.FILES.get("imagen"),
+            latitud=latitud_valor,
+            longitud=longitud_valor,
+        )
 
-        nuevo_estado = request.data.get('estado')
-
-        if nuevo_estado not in ['pendiente', 'en_proceso', 'resuelta']:
-            return Response(
-                {"error": "Estado inválido."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        denuncia.estado = nuevo_estado
-        denuncia.save()
-
-        return Response({"mensaje": "Estado actualizado correctamente."})
+        serializer = DenunciaSerializer(denuncia, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-# ================================
-#   VISTAS HTML
-# ================================
-from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout
-from django.shortcuts import render, redirect
+class MisDenunciasListView(generics.ListAPIView):
+    """Lista únicamente las denuncias del usuario autenticado."""
 
+    serializer_class = DenunciaSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-def login_view(request):
-    if request.method == "POST":
-        username = request.POST.get("username")
-        password = request.POST.get("password")
-
-        user = authenticate(request, username=username, password=password)
-
-        if user is not None:
-            login(request, user)
-            return redirect("home")   # ✅ ESTA ES LA PARTE IMPORTANTE
-        else:
-            messages.error(request, "Usuario o contraseña incorrectos")
-            return redirect("login_django")  # O el nombre de tu URL
-
-    return render(request, "login.html")
-
+    def get_queryset(self):
+        return (
+            Denuncia.objects.filter(usuario=self.request.user)
+            .order_by("-fecha_creacion")
+        )

@@ -141,6 +141,9 @@ STATICFILES_DIRS = [
 ]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 
 # ========================================
 # DEFAULTS
@@ -156,6 +159,7 @@ AUTH_USER_MODEL = 'usuarios.Usuario'
 # ========================================
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.SessionAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
@@ -170,8 +174,13 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
+LOGIN_URL = 'login_django'
+LOGIN_REDIRECT_URL = 'home_ciudadano'
+LOGOUT_REDIRECT_URL = 'login_django'
+=======
 # ========================================
 # CORS (Cross-Origin Resource Sharing)
 # ========================================
 CORS_ALLOW_ALL_ORIGINS = True  # durante desarrollo, luego restringir
+
 
