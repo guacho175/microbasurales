@@ -1,4 +1,13 @@
+from django.contrib import messages
+from django.contrib.auth import authenticate, get_user_model, login
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect, render
 from rest_framework import generics
+
+from rest_framework.permissions import AllowAny
+
+from .serializers import UsuarioRegistroSerializer
+=======
 from django.contrib.auth import get_user_model
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .serializers import UsuarioRegistroSerializer
@@ -31,15 +40,21 @@ def login_view(request):
 
         if user is not None:
             login(request, user)
-            return redirect("home")
-        else:
-            messages.error(request, "Usuario o contraseña incorrectos")
+            return redirect("home_ciudadano")
+        messages.error(request, "Usuario o contraseña incorrectos")
 
+    return render(request, "login.html", {"page": "login"})
+
+=======
     return render(request, "login.html", {"page": "login"})
 
 
 # ✅ HOME HTML (vista protegida)
 @login_required
+def home_ciudadano_view(request):
+    return render(request, "home_ciudadano.html")
+
+=======
 def home_view(request):
     return render(request, "home.html")
 
