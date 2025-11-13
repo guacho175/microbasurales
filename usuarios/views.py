@@ -29,7 +29,10 @@ def login_view(request):
 
         if user is not None:
             login(request, user)
-            if getattr(user, "es_funcionario_municipal", False):
+            puede_gestionar = getattr(user, "puede_gestionar_denuncias", None)
+            if callable(puede_gestionar):
+                puede_gestionar = puede_gestionar()
+            if puede_gestionar:
                 return redirect("panel_denuncias")
             return redirect("home_ciudadano")
         messages.error(request, "Usuario o contraseña incorrectos")
