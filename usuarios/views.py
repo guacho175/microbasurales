@@ -123,18 +123,6 @@ def home_view(request):
 
 
 # ✅ LOGOUT (HTML)
-class LogoutRedirectView(LogoutView):
-    """Logout que permite GET y redirige siempre al login."""
-
-    http_method_names = ["get", "post", "options", "head"]
-    next_page = "login_django"
-
-    def get(self, request, *args, **kwargs):
-        """Forzar que una petición GET se procese como logout inmediato."""
-
-        return self.post(request, *args, **kwargs)
-
-
 @login_required
 def logout_view(request):
     logout(request)
