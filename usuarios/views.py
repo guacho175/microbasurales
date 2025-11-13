@@ -3,10 +3,13 @@ from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods
+from django.utils.http import url_has_allowed_host_and_scheme
 from rest_framework import generics
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+
+from denuncias.models import Denuncia
 
 from .forms import RegistroUsuarioForm
 from .serializers import UsuarioRegistroSerializer
@@ -23,6 +26,8 @@ class RegistroUsuarioView(generics.CreateAPIView):
 
 # ✅ LOGIN HTML (Formulario web)
 def login_view(request):
+    next_url = request.POST.get("next") or request.GET.get("next")
+
     if request.method == "POST":
         username = request.POST.get("username")
         password = request.POST.get("password")
@@ -30,13 +35,40 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
 
         if user is not None:
+            rol_usuario = getattr(user, "rol", None)
+            roles_validos = {choice[0] for choice in Usuario.Roles.choices}
+
+            if not rol_usuario or rol_usuario not in roles_validos:
+                messages.error(
+                    request,
+                    "Tu cuenta no tiene un rol válido asignado. Contacta al administrador.",
+                )
+                return redirect("login_django")
+
             login(request, user)
-            puede_gestionar = getattr(user, "puede_gestionar_denuncias", None)
-            if callable(puede_gestionar):
-                puede_gestionar = puede_gestionar()
-            if puede_gestionar:
+
+            if next_url and url_has_allowed_host_and_scheme(
+                next_url,
+                allowed_hosts={request.get_host()},
+                require_https=request.is_secure(),
+            ):
+                return redirect(next_url)
+
+            if rol_usuario == Usuario.Roles.CIUDADANO:
+                return redirect("home")
+
+            if rol_usuario in {
+                Usuario.Roles.FISCALIZADOR,
+                Usuario.Roles.ADMINISTRADOR,
+            } or getattr(user, "es_administrador", False):
                 return redirect("panel_denuncias")
-            return redirect("home_ciudadano")
+
+            logout(request)
+            messages.error(
+                request,
+                "Tu rol no tiene una redirección configurada en el sistema.",
+            )
+            return redirect("login_django")
         messages.error(request, "Usuario o contraseña incorrectos")
 
     return render(request, "login.html", {"page": "login"})
@@ -67,8 +99,23 @@ def home_ciudadano_view(request):
     return render(request, "home_ciudadano.html")
 
 
+@login_required
 def home_view(request):
-    return render(request, "home.html")
+    denuncias_usuario = []
+
+    if getattr(request.user, "rol", None) == Usuario.Roles.CIUDADANO:
+        denuncias_usuario = (
+            Denuncia.objects.filter(usuario=request.user)
+            .select_related("usuario")
+            .order_by("-fecha_creacion")
+        )
+        return render(
+            request,
+            "home_ciudadano.html",
+            {"denuncias": denuncias_usuario},
+        )
+
+    return render(request, "home.html", {"denuncias": denuncias_usuario})
 
 
 # ✅ LOGOUT (HTML)
