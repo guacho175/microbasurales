@@ -1,4 +1,7 @@
+import logging
+
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.db import OperationalError, ProgrammingError
 from django.urls import reverse
 from django.utils.dateparse import parse_date
 from django.views.generic import TemplateView
@@ -11,6 +14,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .models import Denuncia
 from .permissions import IsFuncionarioMunicipal
 from .serializers import DenunciaAdminSerializer, DenunciaSerializer
+
+
+logger = logging.getLogger(__name__)
 
 
 class DenunciasPagination(PageNumberPagination):
@@ -95,6 +101,19 @@ class MisDenunciasListView(generics.ListAPIView):
         )
 
 
+class MiDenunciaRetrieveUpdateView(generics.RetrieveUpdateAPIView):
+    """Permite obtener y actualizar una denuncia propia."""
+
+    serializer_class = DenunciaSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Denuncia.objects.filter(usuario=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save(usuario=self.request.user)
+
+
 class DenunciaAdminListView(generics.ListAPIView):
     """Lista de denuncias con filtros para funcionarios municipales."""
 
@@ -144,16 +163,43 @@ class DenunciaAdminUpdateView(generics.UpdateAPIView):
 
 
 class PanelFuncionarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
-    """Panel con mapa interactivo exclusivo para funcionarios municipales."""
+    """Panel con mapa interactivo exclusivo para fiscalizadores y administradores."""
 
     template_name = "denuncias/panel_funcionario.html"
 
     def test_func(self):
-        return getattr(self.request.user, "es_funcionario_municipal", False)
+        usuario = self.request.user
+
+        if not usuario.is_authenticated:
+            return False
+
+        puede_gestionar = getattr(usuario, "puede_gestionar_denuncias", None)
+
+        if callable(puede_gestionar):
+            puede_gestionar = puede_gestionar()
+
+        if puede_gestionar is None:
+            puede_gestionar = getattr(usuario, "es_funcionario_municipal", False)
+
+        return bool(puede_gestionar)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         refresh = RefreshToken.for_user(self.request.user)
+        try:
+            zonas_disponibles = (
+                Denuncia.objects.exclude(zona="")
+                .order_by("zona")
+                .values_list("zona", flat=True)
+                .distinct()
+            )
+        except (ProgrammingError, OperationalError):
+            zonas_disponibles = []
+            logger.warning(
+                "No se pudo cargar la lista de zonas disponibles; ¿ejecutaste las migraciones?",
+                exc_info=True,
+            )
+
         context.update(
             {
                 "access_token": str(refresh.access_token),
@@ -163,10 +209,7 @@ class PanelFuncionarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView
                 "api_update_url": self.request.build_absolute_uri(
                     reverse("denuncias_admin_update", args=[0])
                 ),
-                "zonas_disponibles": Denuncia.objects.exclude(zona="")
-                .order_by("zona")
-                .values_list("zona", flat=True)
-                .distinct(),
+                "zonas_disponibles": zonas_disponibles,
             }
         )
         return context
