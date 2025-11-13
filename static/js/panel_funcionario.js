@@ -107,6 +107,21 @@
     const marcadoresPorId = new Map();
     let filtrosActivos = {};
 
+    function obtenerCSRFToken() {
+        const nombre = "csrftoken";
+        const cookies = document.cookie ? document.cookie.split(";") : [];
+
+        for (const cookie of cookies) {
+            const partes = cookie.trim().split("=");
+            const clave = partes.shift();
+            if (clave === nombre) {
+                return decodeURIComponent(partes.join("="));
+            }
+        }
+
+        return null;
+    }
+
     async function cargarDenuncias(filtros = {}) {
         filtrosActivos = filtros;
         markerLayer.clearLayers();
@@ -132,6 +147,7 @@
                         Authorization: `Bearer ${token}`,
                         Accept: "application/json",
                     },
+                    credentials: "same-origin",
                 });
 
                 if (!respuesta.ok) {
@@ -591,13 +607,21 @@
             };
 
             try {
+                const csrfToken = obtenerCSRFToken();
+                const headers = {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                };
+
+                if (csrfToken) {
+                    headers["X-CSRFToken"] = csrfToken;
+                }
+
                 const respuesta = await fetch(`${updateBaseUrl}${denunciaId}/`, {
                     method: "PATCH",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                        Accept: "application/json",
-                    },
+                    headers,
+                    credentials: "same-origin",
                     body: JSON.stringify(payload),
                 });
 
