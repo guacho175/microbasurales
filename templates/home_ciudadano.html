@@ -356,8 +356,14 @@
             timeout: 15000,
             maximumAge: 0,
         };
+        const opcionesGeolocalizacionRapida = {
+            enableHighAccuracy: false,
+            timeout: 5000,
+            maximumAge: 120000,
+        };
         let ultimaPosicionObtenida = null;
         let geolocalizacionEnCurso = false;
+        let controladorReverseGeocode = null;
 
         const map = L.map('map').setView([-33.4489, -70.6693], 12);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -433,8 +439,14 @@
             if (!direccionInput) {
                 return;
             }
+            if (controladorReverseGeocode) {
+                controladorReverseGeocode.abort();
+            }
+            controladorReverseGeocode = new AbortController();
+            const { signal } = controladorReverseGeocode;
             try {
-                const respuesta = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitud}&lon=${longitud}&accept-language=es&addressdetails=1`);
+                direccionInput.value = 'Determinando dirección…';
+                const respuesta = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitud}&lon=${longitud}&accept-language=es&addressdetails=1`, { signal });
                 if (!respuesta.ok) {
                     throw new Error('No se pudo obtener la dirección.');
                 }
@@ -442,7 +454,12 @@
                 const direccionFormateada = formatearDireccionDesdeReverse(data);
                 direccionInput.value = direccionFormateada || data.display_name || '';
             } catch (error) {
+                if (error && error.name === 'AbortError') {
+                    return;
+                }
                 console.error(error);
+            } finally {
+                controladorReverseGeocode = null;
             }
         }
 
@@ -501,19 +518,48 @@
                 return;
             }
             geolocalizacionEnCurso = true;
-            navigator.geolocation.getCurrentPosition(
-                (posicion) => {
+            let solicitudesCompletadas = 0;
+            let obtuvoCoordenadas = false;
+            let errorPreciso = null;
+
+            const finalizarSolicitud = () => {
+                solicitudesCompletadas += 1;
+                if (solicitudesCompletadas >= 2) {
                     geolocalizacionEnCurso = false;
-                    const { latitude, longitude } = posicion.coords;
-                    ultimaPosicionObtenida = { latitude, longitude };
-                    posicionarMarcador(latitude, longitude, { obtenerDireccion: true });
-                },
-                (error) => {
-                    geolocalizacionEnCurso = false;
-                    if (mostrarMensajes) {
-                        manejarErrorGeolocalizacion(error);
+                    if (!obtuvoCoordenadas && mostrarMensajes && errorPreciso) {
+                        manejarErrorGeolocalizacion(errorPreciso);
                     }
-                },
+                }
+            };
+
+            const procesarPosicion = (posicion, { esPrecisa }) => {
+                const { latitude, longitude } = posicion.coords;
+                ultimaPosicionObtenida = { latitude, longitude };
+                obtuvoCoordenadas = true;
+                posicionarMarcador(latitude, longitude, { obtenerDireccion: true });
+                if (esPrecisa) {
+                    geolocalizacionEnCurso = false;
+                    solicitudesCompletadas = 2;
+                }
+                finalizarSolicitud();
+            };
+
+            const procesarError = (error, { esPrecisa }) => {
+                if (esPrecisa) {
+                    errorPreciso = error;
+                }
+                finalizarSolicitud();
+            };
+
+            navigator.geolocation.getCurrentPosition(
+                (posicion) => procesarPosicion(posicion, { esPrecisa: false }),
+                (error) => procesarError(error, { esPrecisa: false }),
+                opcionesGeolocalizacionRapida
+            );
+
+            navigator.geolocation.getCurrentPosition(
+                (posicion) => procesarPosicion(posicion, { esPrecisa: true }),
+                (error) => procesarError(error, { esPrecisa: true }),
                 opcionesGeolocalizacion
             );
         }
