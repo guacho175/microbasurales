@@ -192,11 +192,40 @@
             attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
         }).addTo(map);
 
+        let geolocalizacionSolicitada = false;
+
+        function solicitarUbicacionInicial() {
+            if (geolocalizacionSolicitada) {
+                return;
+            }
+            geolocalizacionSolicitada = true;
+
+            if (!navigator.geolocation) {
+                mostrarAlerta('Tu navegador no soporta geolocalización. Selecciona la ubicación manualmente.', 'warning');
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                function (posicion) {
+                    const { latitude, longitude } = posicion.coords;
+                    actualizarMarcador(latitude, longitude);
+                },
+                function () {
+                    geolocalizacionSolicitada = false;
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                }
+            );
+        }
+
         if (modalDenuncia) {
             modalDenuncia.addEventListener('shown.bs.modal', () => {
                 setTimeout(() => {
                     map.invalidateSize();
                 }, 200);
+                solicitarUbicacionInicial();
             });
         }
 
@@ -241,6 +270,10 @@
                     },
                     function () {
                         mostrarAlerta('No pudimos obtener tu ubicación. Intenta seleccionarla manualmente.', 'warning');
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
                     }
                 );
             });
