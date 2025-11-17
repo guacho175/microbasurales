@@ -1,4 +1,5 @@
 import logging
+import unicodedata
 from urllib.parse import urlencode
 
 from django.contrib.auth.decorators import login_required
@@ -8,6 +9,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.dateparse import parse_date
 from rest_framework import generics, permissions, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -39,10 +41,81 @@ class DenunciaListCreateView(APIView):
 
     def get(self, request, *args, **kwargs):
         queryset = Denuncia.objects.select_related("usuario").all()
+
+        queryset = self._aplicar_filtros(request, queryset)
+
         serializer = DenunciaSerializer(
             queryset, many=True, context={"request": request}
         )
         return Response(serializer.data)
+
+    def _aplicar_filtros(self, request, queryset):
+        params = request.query_params
+
+        estado = self._normalizar_estado(params.get("estado"))
+        if estado:
+            queryset = queryset.filter(estado=estado)
+
+        zona = (params.get("zona") or "").strip()
+        if zona:
+            queryset = queryset.filter(zona__iexact=zona)
+
+        fecha_desde = self._obtener_fecha(params, "fecha_desde", "desde")
+        if fecha_desde:
+            queryset = queryset.filter(fecha_creacion__date__gte=fecha_desde)
+
+        fecha_hasta = self._obtener_fecha(params, "fecha_hasta", "hasta")
+        if fecha_hasta:
+            queryset = queryset.filter(fecha_creacion__date__lte=fecha_hasta)
+
+        return queryset.order_by("-fecha_creacion")
+
+    def _obtener_fecha(self, params, *nombres):
+        for nombre in nombres:
+            valor = (params.get(nombre) or "").strip()
+            if not valor:
+                continue
+
+            fecha = parse_date(valor)
+            if fecha:
+                return fecha
+
+            raise ValidationError(
+                {nombre: "Formato de fecha inválido. Usa AAAA-MM-DD."}
+            )
+
+        return None
+
+    def _normalizar_estado(self, valor):
+        estado = (valor or "").strip()
+        if not estado:
+            return ""
+
+        equivalencias = dict(Denuncia.EstadoDenuncia.choices)
+        if estado in equivalencias:
+            return estado
+
+        estado_normalizado = estado.lower()
+        for key in equivalencias:
+            if estado_normalizado == key.lower():
+                return key
+
+        estado_sin_tildes = self._normalizar_texto(estado)
+        for key, label in Denuncia.EstadoDenuncia.choices:
+            if estado_sin_tildes == self._normalizar_texto(label):
+                return key
+
+        return estado
+
+    def _normalizar_texto(self, texto):
+        if not texto:
+            return ""
+
+        texto_normalizado = unicodedata.normalize("NFD", texto)
+        texto_sin_tildes = "".join(
+            char for char in texto_normalizado if unicodedata.category(char) != "Mn"
+        )
+        return texto_sin_tildes.strip().lower()
 
     def post(self, request, *args, **kwargs):
         descripcion = request.data.get("descripcion", "").strip()
@@ -122,7 +195,10 @@ class MiDenunciaRetrieveUpdateView(generics.RetrieveUpdateAPIView):
 
 
 class DenunciaAdminListView(generics.ListAPIView):
-    """Lista de denuncias con filtros para funcionarios municipales."""
+    """Lista de denuncias con filtros para funcionarios municipales.
+
+    Ejemplo: ``/api/denuncias/?estado=pendiente&zona=Centro&desde=2024-01-01&hasta=2024-01-31``
+    """
 
     serializer_class = DenunciaAdminSerializer
     permission_classes = [permissions.IsAuthenticated, IsFuncionarioMunicipal]
@@ -161,11 +237,11 @@ class DenunciaAdminListView(generics.ListAPIView):
         if zona:
             queryset = queryset.filter(zona__iexact=zona)
 
-        fecha_desde = parse_date(self.request.query_params.get("fecha_desde", ""))
+        fecha_desde = self._parse_fecha_param("fecha_desde", "desde")
         if fecha_desde:
             queryset = queryset.filter(fecha_creacion__date__gte=fecha_desde)
 
-        fecha_hasta = parse_date(self.request.query_params.get("fecha_hasta", ""))
+        fecha_hasta = self._parse_fecha_param("fecha_hasta", "hasta")
         if fecha_hasta:
             queryset = queryset.filter(fecha_creacion__date__lte=fecha_hasta)
 
@@ -175,6 +251,24 @@ class DenunciaAdminListView(generics.ListAPIView):
         context = super().get_serializer_context()
         context["request"] = self.request
         return context
+
+    def _parse_fecha_param(self, *nombres):
+        for nombre in nombres:
+            valor = (self.request.query_params.get(nombre) or "").strip()
+            if not valor:
+                continue
+
+            fecha = parse_date(valor)
+            if fecha:
+                return fecha
+
+            raise ValidationError(
+                {
+                    nombre: "Formato de fecha inválido. Usa AAAA-MM-DD.",
+                }
+            )
+
+        return None
 
 
 class DenunciaAdminUpdateView(generics.UpdateAPIView):
