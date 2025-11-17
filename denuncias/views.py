@@ -1,10 +1,8 @@
 import logging
-import unicodedata
 from urllib.parse import urlencode
 
 from django.contrib.auth.decorators import login_required
 from django.db import OperationalError, ProgrammingError, connection
-from django.db.models import Q
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.dateparse import parse_date
@@ -26,6 +24,9 @@ from .serializers import (
 
 
 logger = logging.getLogger(__name__)
+
+ESTADOS_PERMITIDOS = {"Nueva", "En gestión", "Finalizada"}
+ESTADO_FINALIZADA = "Finalizada"
 
 
 class DenunciasPagination(PageNumberPagination):
@@ -52,8 +53,8 @@ class DenunciaListCreateView(APIView):
     def _aplicar_filtros(self, request, queryset):
         params = request.query_params
 
-        estado = self._normalizar_estado(params.get("estado"))
-        if estado:
+        estado = (params.get("estado") or "").strip()
+        if estado in ESTADOS_PERMITIDOS:
             queryset = queryset.filter(estado=estado)
 
         zona = (params.get("zona") or "").strip()
@@ -85,37 +86,6 @@ class DenunciaListCreateView(APIView):
             )
 
         return None
-
-    def _normalizar_estado(self, valor):
-        estado = (valor or "").strip()
-        if not estado:
-            return ""
-
-        equivalencias = dict(Denuncia.EstadoDenuncia.choices)
-        if estado in equivalencias:
-            return estado
-
-        estado_normalizado = estado.lower()
-        for key in equivalencias:
-            if estado_normalizado == key.lower():
-                return key
-
-        estado_sin_tildes = self._normalizar_texto(estado)
-        for key, label in Denuncia.EstadoDenuncia.choices:
-            if estado_sin_tildes == self._normalizar_texto(label):
-                return key
-
-        return estado
-
-    def _normalizar_texto(self, texto):
-        if not texto:
-            return ""
-
-        texto_normalizado = unicodedata.normalize("NFD", texto)
-        texto_sin_tildes = "".join(
-            char for char in texto_normalizado if unicodedata.category(char) != "Mn"
-        )
-        return texto_sin_tildes.strip().lower()
 
     def post(self, request, *args, **kwargs):
         descripcion = request.data.get("descripcion", "").strip()
@@ -207,31 +177,19 @@ class DenunciaAdminListView(generics.ListAPIView):
     def get_queryset(self):
         queryset = Denuncia.objects.select_related("usuario").all()
 
-        estado = self.request.query_params.get("estado")
-        if estado:
-            estado_normalizado = estado.lower()
-            if estado_normalizado in {"finalizado", "finalizada"}:
-                queryset = queryset.filter(
-                    Q(estado__iexact="finalizado")
-                    | Q(estado__iexact="finalizada")
-                    | Q(estado=Denuncia.EstadoDenuncia.RESUELTA)
-                )
-            else:
-                queryset = queryset.filter(estado=estado)
+        estado = (self.request.query_params.get("estado") or "").strip()
+        if estado in ESTADOS_PERMITIDOS:
+            queryset = queryset.filter(estado=estado)
 
-        excluir_estado = self.request.query_params.get("excluir_estado")
-        if excluir_estado:
-            queryset = queryset.exclude(estado__iexact=excluir_estado)
+        excluir_estado = (self.request.query_params.get("excluir_estado") or "").strip()
+        if excluir_estado in ESTADOS_PERMITIDOS:
+            queryset = queryset.exclude(estado=excluir_estado)
 
         solo_activos = self.request.query_params.get("solo_activos")
         if solo_activos is not None:
             valor_normalizado = str(solo_activos).lower()
             if valor_normalizado in {"1", "true", "t", "yes", "on"}:
-                queryset = queryset.exclude(
-                    Q(estado__iexact="finalizado")
-                    | Q(estado__iexact="finalizada")
-                    | Q(estado=Denuncia.EstadoDenuncia.RESUELTA)
-                )
+                queryset = queryset.exclude(estado=ESTADO_FINALIZADA)
 
         zona = self.request.query_params.get("zona")
         if zona:
@@ -380,7 +338,7 @@ def _construir_panel_context(request, *, solo_activos=False, solo_finalizados=Fa
     query_params = {}
 
     if solo_finalizados:
-        query_params["estado"] = Denuncia.EstadoDenuncia.RESUELTA
+        query_params["estado"] = ESTADO_FINALIZADA
     elif solo_activos:
         query_params["solo_activos"] = "1"
 

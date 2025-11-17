@@ -23,6 +23,33 @@
     const btnGestion = document.getElementById("btnGestion");
     const btnFinalizada = document.getElementById("btnFinalizada");
 
+    const ESTADO_NUEVA = "Nueva";
+    const ESTADO_EN_GESTION = "En gestión";
+    const ESTADO_FINALIZADA = "Finalizada";
+    const ESTADOS_VALIDOS = new Set([
+        ESTADO_NUEVA,
+        ESTADO_EN_GESTION,
+        ESTADO_FINALIZADA,
+    ]);
+    const ESTADO_PARAMETRO_MAP = new Map([
+        [ESTADO_NUEVA, ESTADO_NUEVA],
+        [ESTADO_EN_GESTION, ESTADO_EN_GESTION],
+        [ESTADO_FINALIZADA, ESTADO_FINALIZADA],
+        ["pendiente", ESTADO_NUEVA],
+        ["en_proceso", ESTADO_EN_GESTION],
+        ["resuelta", ESTADO_FINALIZADA],
+    ]);
+    const ESTADO_FORM_VALUE_MAP = new Map([
+        [ESTADO_NUEVA, "pendiente"],
+        [ESTADO_EN_GESTION, "en_proceso"],
+        [ESTADO_FINALIZADA, "resuelta"],
+    ]);
+    const ESTADO_VARIANTES = new Map([
+        [ESTADO_NUEVA, [ESTADO_NUEVA, "pendiente"]],
+        [ESTADO_EN_GESTION, [ESTADO_EN_GESTION, "en_proceso"]],
+        [ESTADO_FINALIZADA, [ESTADO_FINALIZADA, "resuelta"]],
+    ]);
+
     if (sinDenunciasRow) {
         sinDenunciasRow.remove();
     }
@@ -68,44 +95,24 @@
         }
     }
 
-    function normalizarTextoBasico(texto) {
-        if (typeof texto !== "string") {
-            return "";
-        }
-
-        return texto
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .toLowerCase()
-            .trim();
-    }
-
     const estadosMap = new Map(
         estadosConfig.map((estado) => [estado.value, estado])
     );
-    const estadoLabelToValue = new Map();
-    const estadoValueNormalizedMap = new Map();
+    const estadosLabelMap = new Map();
 
-    estadosConfig.forEach(({ value, label }) => {
-        const labelKey = normalizarTextoBasico(label);
-        const valueKey = normalizarTextoBasico(value);
-
-        if (labelKey && !estadoLabelToValue.has(labelKey)) {
-            estadoLabelToValue.set(labelKey, value);
-        }
-
-        if (valueKey && !estadoValueNormalizedMap.has(valueKey)) {
-            estadoValueNormalizedMap.set(valueKey, value);
+    estadosConfig.forEach((estado) => {
+        if (estado.label && !estadosLabelMap.has(estado.label)) {
+            estadosLabelMap.set(estado.label, estado);
         }
     });
     const DEFAULT_MARKER_COLOR = "#1d3557";
-    const ESTADO_DEFECTO =
-        (estadosMap.has("pendiente")
-            ? "pendiente"
-            : estadosConfig[0] && estadosConfig[0].value) || "pendiente";
+    const ESTADO_DEFECTO = ESTADO_NUEVA;
 
     function obtenerConfigEstado(valor) {
-        return estadosMap.get(valor);
+        if (!valor) {
+            return null;
+        }
+        return estadosMap.get(valor) || estadosLabelMap.get(valor);
     }
 
     function obtenerColorPorEstado(estado) {
@@ -157,19 +164,61 @@
         return denuncia.estado;
     }
 
-    function activarTab(estadoObjetivo) {
-        if (!estadoObjetivo) {
-            estadoObjetivo = ESTADO_DEFECTO;
+    function obtenerEstadoConsulta(valor) {
+        if (typeof valor !== "string") {
+            return "";
         }
 
+        const limpio = valor.trim();
+        if (!limpio) {
+            return "";
+        }
+
+        return ESTADO_PARAMETRO_MAP.get(limpio) || "";
+    }
+
+    function obtenerValorFormularioDesdeEstado(estado) {
+        return ESTADO_FORM_VALUE_MAP.get(estado) || estado;
+    }
+
+    function estadoDesdeDataset(valor) {
+        if (typeof valor !== "string") {
+            return "";
+        }
+        const limpio = valor.trim();
+        if (!limpio) {
+            return "";
+        }
+        return ESTADO_PARAMETRO_MAP.get(limpio) || limpio;
+    }
+
+    function estadoCoincide(estadoActual, estadoObjetivo) {
+        if (!estadoActual || !estadoObjetivo) {
+            return false;
+        }
+
+        const variantes = ESTADO_VARIANTES.get(estadoObjetivo);
+        if (!variantes) {
+            return estadoActual === estadoObjetivo;
+        }
+
+        return variantes.includes(estadoActual);
+    }
+
+    function activarTab(estadoObjetivo) {
+        const estadoDeseado = ESTADOS_VALIDOS.has(estadoObjetivo)
+            ? estadoObjetivo
+            : ESTADO_DEFECTO;
+
         const estadoExiste = Array.from(estadoTabs).some(
-            (tab) => tab.dataset.estado === estadoObjetivo
+            (tab) => estadoDesdeDataset(tab.dataset.estado) === estadoDeseado
         );
 
-        const estadoActivo = estadoExiste ? estadoObjetivo : ESTADO_DEFECTO;
+        const estadoActivo = estadoExiste ? estadoDeseado : ESTADO_DEFECTO;
 
         estadoTabs.forEach((tab) => {
-            if (tab.dataset.estado === estadoActivo) {
+            const tabEstado = estadoDesdeDataset(tab.dataset.estado);
+            if (tabEstado === estadoActivo) {
                 tab.classList.add("active");
             } else {
                 tab.classList.remove("active");
@@ -177,7 +226,8 @@
         });
 
         estadoPaneles.forEach((panel) => {
-            if (panel.dataset.estado === estadoActivo) {
+            const panelEstado = estadoDesdeDataset(panel.dataset.estado);
+            if (panelEstado === estadoActivo) {
                 panel.classList.remove("d-none");
                 panel.classList.add("active");
             } else {
@@ -219,67 +269,21 @@
         };
     }
 
-    function normalizarEstadoValor(estadoEntrada) {
-        const entradaLimpia =
-            typeof estadoEntrada === "string"
-                ? estadoEntrada.trim()
-                : estadoEntrada;
-
-        if (!entradaLimpia) {
-            return "";
-        }
-
-        if (estadosMap.has(entradaLimpia)) {
-            return entradaLimpia;
-        }
-
-        const claveNormalizada = normalizarTextoBasico(entradaLimpia);
-
-        if (estadoLabelToValue.has(claveNormalizada)) {
-            return estadoLabelToValue.get(claveNormalizada);
-        }
-
-        if (estadoValueNormalizedMap.has(claveNormalizada)) {
-            return estadoValueNormalizedMap.get(claveNormalizada);
-        }
-
-        return entradaLimpia;
-    }
-
     function normalizarFiltros(filtros = {}) {
         const limpiar = (valor) =>
             typeof valor === "string" ? valor.trim() : valor;
 
-        const normalizados = { ...filtros };
-
-        delete normalizados._parametrosConsulta;
-        delete normalizados.estado_parametro;
-
-        if (!normalizados.desde && normalizados.fecha_desde) {
-            normalizados.desde = normalizados.fecha_desde;
-        }
-        if (!normalizados.hasta && normalizados.fecha_hasta) {
-            normalizados.hasta = normalizados.fecha_hasta;
-        }
-
-        const estadoEntrada = limpiar(normalizados.estado || "");
-        const zona = limpiar(normalizados.zona || "");
-        const desde = limpiar(normalizados.desde || "");
-        const hasta = limpiar(normalizados.hasta || "");
-
-        const estadoNormalizado = normalizarEstadoValor(estadoEntrada);
-        normalizados.estado = estadoNormalizado;
-        normalizados.estado_parametro = estadoEntrada || estadoNormalizado;
-        normalizados.zona = zona;
-        normalizados.desde = desde;
-        normalizados.hasta = hasta;
-
-        delete normalizados.fecha_desde;
-        delete normalizados.fecha_hasta;
+        const zona = limpiar(filtros.zona || "");
+        const desde =
+            limpiar(filtros.desde || filtros.fecha_desde || "") || "";
+        const hasta =
+            limpiar(filtros.hasta || filtros.fecha_hasta || "") || "";
+        const estadoEntrada = limpiar(filtros.estado || "");
+        const estadoConsulta = obtenerEstadoConsulta(estadoEntrada);
 
         const parametrosConsulta = {};
-        if (normalizados.estado_parametro) {
-            parametrosConsulta.estado = normalizados.estado_parametro;
+        if (estadoConsulta) {
+            parametrosConsulta.estado = estadoConsulta;
         }
         if (zona) {
             parametrosConsulta.zona = zona;
@@ -291,9 +295,13 @@
             parametrosConsulta.hasta = hasta;
         }
 
-        normalizados._parametrosConsulta = parametrosConsulta;
-
-        return normalizados;
+        return {
+            estado: estadoConsulta,
+            zona,
+            desde,
+            hasta,
+            _parametrosConsulta: parametrosConsulta,
+        };
     }
 
     function obtenerCSRFToken() {
@@ -357,11 +365,15 @@
                 const data = await respuesta.json();
                 (data.results || []).forEach((denuncia) => {
                     agregarMarcador(denuncia, bounds);
-                    if (denuncia.estado === "pendiente") {
+                    if (estadoCoincide(denuncia.estado, ESTADO_NUEVA)) {
                         pendientes.push(denuncia);
-                    } else if (denuncia.estado === "en_proceso") {
+                    } else if (
+                        estadoCoincide(denuncia.estado, ESTADO_EN_GESTION)
+                    ) {
                         enProceso.push(denuncia);
-                    } else if (denuncia.estado === "resuelta") {
+                    } else if (
+                        estadoCoincide(denuncia.estado, ESTADO_FINALIZADA)
+                    ) {
                         resueltas.push(denuncia);
                     }
                 });
@@ -441,14 +453,15 @@
     }
 
     function cargarDenunciasPorEstado(estadoDeseado) {
-        const estadoNormalizado = normalizarEstadoValor(estadoDeseado);
+        const estadoConsulta = obtenerEstadoConsulta(estadoDeseado);
 
         if (filtrosForm && filtrosForm.estado) {
-            filtrosForm.estado.value = estadoNormalizado;
+            filtrosForm.estado.value =
+                obtenerValorFormularioDesdeEstado(estadoConsulta);
         }
 
         const filtrosActuales = obtenerFiltrosDesdeFormulario();
-        filtrosActuales.estado = estadoDeseado;
+        filtrosActuales.estado = estadoConsulta || "";
 
         return cargarMapaConDatos(filtrosActuales);
     }
