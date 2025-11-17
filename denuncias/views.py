@@ -3,11 +3,11 @@ from urllib.parse import urlencode
 
 from django.contrib.auth.decorators import login_required
 from django.db import OperationalError, ProgrammingError, connection
+from django.db.models import Q
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.dateparse import parse_date
 from rest_framework import generics, permissions, status
-from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -25,9 +25,6 @@ from .serializers import (
 
 logger = logging.getLogger(__name__)
 
-ESTADOS_PERMITIDOS = set(EstadoDenuncia.values)
-ESTADO_FINALIZADA = EstadoDenuncia.RESUELTA
-
 
 class DenunciasPagination(PageNumberPagination):
     page_size = 50
@@ -42,50 +39,10 @@ class DenunciaListCreateView(APIView):
 
     def get(self, request, *args, **kwargs):
         queryset = Denuncia.objects.select_related("usuario").all()
-
-        queryset = self._aplicar_filtros(request, queryset)
-
         serializer = DenunciaSerializer(
             queryset, many=True, context={"request": request}
         )
         return Response(serializer.data)
-
-    def _aplicar_filtros(self, request, queryset):
-        params = request.query_params
-
-        estado = (params.get("estado") or "").strip()
-        if estado in ESTADOS_PERMITIDOS:
-            queryset = queryset.filter(estado=estado)
-
-        zona = (params.get("zona") or "").strip()
-        if zona:
-            queryset = queryset.filter(zona__iexact=zona)
-
-        fecha_desde = self._obtener_fecha(params, "fecha_desde", "desde")
-        if fecha_desde:
-            queryset = queryset.filter(fecha_creacion__date__gte=fecha_desde)
-
-        fecha_hasta = self._obtener_fecha(params, "fecha_hasta", "hasta")
-        if fecha_hasta:
-            queryset = queryset.filter(fecha_creacion__date__lte=fecha_hasta)
-
-        return queryset.order_by("-fecha_creacion")
-
-    def _obtener_fecha(self, params, *nombres):
-        for nombre in nombres:
-            valor = (params.get(nombre) or "").strip()
-            if not valor:
-                continue
-
-            fecha = parse_date(valor)
-            if fecha:
-                return fecha
-
-            raise ValidationError(
-                {nombre: "Formato de fecha inválido. Usa AAAA-MM-DD."}
-            )
-
-        return None
 
     def post(self, request, *args, **kwargs):
         descripcion = request.data.get("descripcion", "").strip()
@@ -165,10 +122,7 @@ class MiDenunciaRetrieveUpdateView(generics.RetrieveUpdateAPIView):
 
 
 class DenunciaAdminListView(generics.ListAPIView):
-    """Lista de denuncias con filtros para funcionarios municipales.
-
-    Ejemplo: ``/api/denuncias/?estado=pendiente&zona=Centro&desde=2024-01-01&hasta=2024-01-31``
-    """
+    """Lista de denuncias con filtros para funcionarios municipales."""
 
     serializer_class = DenunciaAdminSerializer
     permission_classes = [permissions.IsAuthenticated, IsFuncionarioMunicipal]
@@ -177,29 +131,41 @@ class DenunciaAdminListView(generics.ListAPIView):
     def get_queryset(self):
         queryset = Denuncia.objects.select_related("usuario").all()
 
-        estado = (self.request.query_params.get("estado") or "").strip()
-        if estado in ESTADOS_PERMITIDOS:
-            queryset = queryset.filter(estado=estado)
+        estado = self.request.query_params.get("estado")
+        if estado:
+            estado_normalizado = estado.lower()
+            if estado_normalizado in {"finalizado", "finalizada"}:
+                queryset = queryset.filter(
+                    Q(estado__iexact="finalizado")
+                    | Q(estado__iexact="finalizada")
+                    | Q(estado=Denuncia.EstadoDenuncia.RESUELTA)
+                )
+            else:
+                queryset = queryset.filter(estado=estado)
 
-        excluir_estado = (self.request.query_params.get("excluir_estado") or "").strip()
-        if excluir_estado in ESTADOS_PERMITIDOS:
-            queryset = queryset.exclude(estado=excluir_estado)
+        excluir_estado = self.request.query_params.get("excluir_estado")
+        if excluir_estado:
+            queryset = queryset.exclude(estado__iexact=excluir_estado)
 
         solo_activos = self.request.query_params.get("solo_activos")
         if solo_activos is not None:
             valor_normalizado = str(solo_activos).lower()
             if valor_normalizado in {"1", "true", "t", "yes", "on"}:
-                queryset = queryset.exclude(estado=ESTADO_FINALIZADA)
+                queryset = queryset.exclude(
+                    Q(estado__iexact="finalizado")
+                    | Q(estado__iexact="finalizada")
+                    | Q(estado=Denuncia.EstadoDenuncia.RESUELTA)
+                )
 
         zona = self.request.query_params.get("zona")
         if zona:
             queryset = queryset.filter(zona__iexact=zona)
 
-        fecha_desde = self._parse_fecha_param("fecha_desde", "desde")
+        fecha_desde = parse_date(self.request.query_params.get("fecha_desde", ""))
         if fecha_desde:
             queryset = queryset.filter(fecha_creacion__date__gte=fecha_desde)
 
-        fecha_hasta = self._parse_fecha_param("fecha_hasta", "hasta")
+        fecha_hasta = parse_date(self.request.query_params.get("fecha_hasta", ""))
         if fecha_hasta:
             queryset = queryset.filter(fecha_creacion__date__lte=fecha_hasta)
 
@@ -209,24 +175,6 @@ class DenunciaAdminListView(generics.ListAPIView):
         context = super().get_serializer_context()
         context["request"] = self.request
         return context
-
-    def _parse_fecha_param(self, *nombres):
-        for nombre in nombres:
-            valor = (self.request.query_params.get(nombre) or "").strip()
-            if not valor:
-                continue
-
-            fecha = parse_date(valor)
-            if fecha:
-                return fecha
-
-            raise ValidationError(
-                {
-                    nombre: "Formato de fecha inválido. Usa AAAA-MM-DD.",
-                }
-            )
-
-        return None
 
 
 class DenunciaAdminUpdateView(generics.UpdateAPIView):
@@ -338,7 +286,7 @@ def _construir_panel_context(request, *, solo_activos=False, solo_finalizados=Fa
     query_params = {}
 
     if solo_finalizados:
-        query_params["estado"] = ESTADO_FINALIZADA
+        query_params["estado"] = Denuncia.EstadoDenuncia.RESUELTA
     elif solo_activos:
         query_params["solo_activos"] = "1"
 

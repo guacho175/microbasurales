@@ -19,36 +19,6 @@
 
     const estadoTabs = document.querySelectorAll(".estado-tab");
     const estadoPaneles = document.querySelectorAll(".estado-panel");
-    const btnNueva = document.getElementById("btnNueva");
-    const btnGestion = document.getElementById("btnGestion");
-    const btnFinalizada = document.getElementById("btnFinalizada");
-
-    const ESTADO_NUEVA = "Nueva";
-    const ESTADO_EN_GESTION = "En gestión";
-    const ESTADO_FINALIZADA = "Finalizada";
-    const ESTADOS_VALIDOS = new Set([
-        ESTADO_NUEVA,
-        ESTADO_EN_GESTION,
-        ESTADO_FINALIZADA,
-    ]);
-    const ESTADO_PARAMETRO_MAP = new Map([
-        [ESTADO_NUEVA, ESTADO_NUEVA],
-        [ESTADO_EN_GESTION, ESTADO_EN_GESTION],
-        [ESTADO_FINALIZADA, ESTADO_FINALIZADA],
-        ["pendiente", ESTADO_NUEVA],
-        ["en_proceso", ESTADO_EN_GESTION],
-        ["resuelta", ESTADO_FINALIZADA],
-    ]);
-    const ESTADO_FORM_VALUE_MAP = new Map([
-        [ESTADO_NUEVA, "pendiente"],
-        [ESTADO_EN_GESTION, "en_proceso"],
-        [ESTADO_FINALIZADA, "resuelta"],
-    ]);
-    const ESTADO_VARIANTES = new Map([
-        [ESTADO_NUEVA, [ESTADO_NUEVA, "pendiente"]],
-        [ESTADO_EN_GESTION, [ESTADO_EN_GESTION, "en_proceso"]],
-        [ESTADO_FINALIZADA, [ESTADO_FINALIZADA, "resuelta"]],
-    ]);
 
     if (sinDenunciasRow) {
         sinDenunciasRow.remove();
@@ -98,26 +68,14 @@
     const estadosMap = new Map(
         estadosConfig.map((estado) => [estado.value, estado])
     );
-    const estadosLabelMap = new Map();
-
-    estadosConfig.forEach((estado) => {
-        if (estado.label && !estadosLabelMap.has(estado.label)) {
-            estadosLabelMap.set(estado.label, estado);
-        }
-    });
     const DEFAULT_MARKER_COLOR = "#1d3557";
-    const ESTADO_DEFECTO = ESTADO_NUEVA;
+    const ESTADO_DEFECTO =
+        (estadosMap.has("pendiente")
+            ? "pendiente"
+            : estadosConfig[0] && estadosConfig[0].value) || "pendiente";
 
     function obtenerConfigEstado(valor) {
-        if (!valor) {
-            return null;
-        }
-        return estadosMap.get(valor) || estadosLabelMap.get(valor);
-    }
-
-    function obtenerColorPorEstado(estado) {
-        const config = estado ? obtenerConfigEstado(estado) : null;
-        return (config && config.color) || DEFAULT_MARKER_COLOR;
+        return estadosMap.get(valor);
     }
 
     function obtenerColorDenuncia(denuncia) {
@@ -125,26 +83,8 @@
             return denuncia.color;
         }
 
-        return obtenerColorPorEstado(denuncia ? denuncia.estado : null);
-    }
-
-    function iconoSegunEstado(estado) {
-        const clave = estado || "__default__";
-        if (iconosPorEstado.has(clave)) {
-            return iconosPorEstado.get(clave);
-        }
-
-        const color = obtenerColorPorEstado(estado);
-        const icono = L.divIcon({
-            className: "denuncia-marker",
-            html: `<span class="marker-estado" style="background-color: ${color};"></span>`,
-            iconSize: [22, 22],
-            iconAnchor: [11, 22],
-            popupAnchor: [0, -22],
-        });
-
-        iconosPorEstado.set(clave, icono);
-        return icono;
+        const config = denuncia ? obtenerConfigEstado(denuncia.estado) : null;
+        return (config && config.color) || DEFAULT_MARKER_COLOR;
     }
 
     function obtenerEtiquetaEstado(denuncia) {
@@ -164,74 +104,19 @@
         return denuncia.estado;
     }
 
-    function obtenerEstadoConsulta(valor) {
-        if (typeof valor !== "string") {
-            return "";
-        }
-
-        const limpio = valor.trim();
-        if (!limpio) {
-            return "";
-        }
-
-        return ESTADO_PARAMETRO_MAP.get(limpio) || "";
-    }
-
-    function obtenerEstadoParametro(estadoCanonico) {
-        if (typeof estadoCanonico !== "string") {
-            return "";
-        }
-
-        const limpio = estadoCanonico.trim();
-        if (!limpio) {
-            return "";
-        }
-
-        return ESTADO_FORM_VALUE_MAP.get(limpio) || limpio;
-    }
-
-    function obtenerValorFormularioDesdeEstado(estado) {
-        return ESTADO_FORM_VALUE_MAP.get(estado) || estado;
-    }
-
-    function estadoDesdeDataset(valor) {
-        if (typeof valor !== "string") {
-            return "";
-        }
-        const limpio = valor.trim();
-        if (!limpio) {
-            return "";
-        }
-        return ESTADO_PARAMETRO_MAP.get(limpio) || limpio;
-    }
-
-    function estadoCoincide(estadoActual, estadoObjetivo) {
-        if (!estadoActual || !estadoObjetivo) {
-            return false;
-        }
-
-        const variantes = ESTADO_VARIANTES.get(estadoObjetivo);
-        if (!variantes) {
-            return estadoActual === estadoObjetivo;
-        }
-
-        return variantes.includes(estadoActual);
-    }
-
     function activarTab(estadoObjetivo) {
-        const estadoDeseado = ESTADOS_VALIDOS.has(estadoObjetivo)
-            ? estadoObjetivo
-            : ESTADO_DEFECTO;
+        if (!estadoObjetivo) {
+            estadoObjetivo = ESTADO_DEFECTO;
+        }
 
         const estadoExiste = Array.from(estadoTabs).some(
-            (tab) => estadoDesdeDataset(tab.dataset.estado) === estadoDeseado
+            (tab) => tab.dataset.estado === estadoObjetivo
         );
 
-        const estadoActivo = estadoExiste ? estadoDeseado : ESTADO_DEFECTO;
+        const estadoActivo = estadoExiste ? estadoObjetivo : ESTADO_DEFECTO;
 
         estadoTabs.forEach((tab) => {
-            const tabEstado = estadoDesdeDataset(tab.dataset.estado);
-            if (tabEstado === estadoActivo) {
+            if (tab.dataset.estado === estadoActivo) {
                 tab.classList.add("active");
             } else {
                 tab.classList.remove("active");
@@ -239,8 +124,7 @@
         });
 
         estadoPaneles.forEach((panel) => {
-            const panelEstado = estadoDesdeDataset(panel.dataset.estado);
-            if (panelEstado === estadoActivo) {
+            if (panel.dataset.estado === estadoActivo) {
                 panel.classList.remove("d-none");
                 panel.classList.add("active");
             } else {
@@ -250,76 +134,24 @@
         });
     }
 
+    estadoTabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+            activarTab(tab.dataset.estado);
+        });
+    });
+
     const map = L.map("mapa-denuncias", {
         scrollWheelZoom: true,
-    }).setView([-33.4507, -70.6671], 12);
+    }).setView([-33.4507, -70.6671], 14);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "&copy; OpenStreetMap contributors",
         maxZoom: 19,
     }).addTo(map);
 
-    const capaDenuncias = L.layerGroup().addTo(map);
+    const markerLayer = L.layerGroup().addTo(map);
     const marcadoresPorId = new Map();
-    const iconosPorEstado = new Map();
     let filtrosActivos = {};
-
-    function obtenerFiltrosDesdeFormulario() {
-        if (!filtrosForm) {
-            const { _parametrosConsulta, estado_parametro, ...resto } =
-                filtrosActivos || {};
-            return { ...resto };
-        }
-
-        const obtenerValorSeguro = (campo) =>
-            campo && "value" in campo ? campo.value : "";
-
-        return {
-            estado: obtenerValorSeguro(filtrosForm.estado),
-            zona: obtenerValorSeguro(filtrosForm.zona),
-            desde: obtenerValorSeguro(filtrosForm.fecha_desde),
-            hasta: obtenerValorSeguro(filtrosForm.fecha_hasta),
-        };
-    }
-
-    function normalizarFiltros(filtros = {}) {
-        const limpiar = (valor) =>
-            typeof valor === "string" ? valor.trim() : valor;
-
-        const zona = limpiar(filtros.zona || "");
-        const desde =
-            limpiar(filtros.desde || filtros.fecha_desde || "") || "";
-        const hasta =
-            limpiar(filtros.hasta || filtros.fecha_hasta || "") || "";
-        const estadoEntrada = limpiar(filtros.estado || "");
-        const estadoConsulta = obtenerEstadoConsulta(estadoEntrada);
-        const estadoParametro = obtenerEstadoParametro(
-            estadoConsulta || estadoEntrada
-        );
-
-        const parametrosConsulta = {};
-        if (estadoParametro) {
-            parametrosConsulta.estado = estadoParametro;
-        }
-        if (zona) {
-            parametrosConsulta.zona = zona;
-        }
-        if (desde) {
-            parametrosConsulta.desde = desde;
-        }
-        if (hasta) {
-            parametrosConsulta.hasta = hasta;
-        }
-
-        return {
-            estado: estadoConsulta,
-            estado_parametro: estadoParametro,
-            zona,
-            desde,
-            hasta,
-            _parametrosConsulta: parametrosConsulta,
-        };
-    }
 
     function obtenerCSRFToken() {
         const nombre = "csrftoken";
@@ -336,30 +168,19 @@
         return null;
     }
 
-    async function cargarMapaConDatos(filtros = {}) {
-        const filtrosNormalizados = normalizarFiltros(filtros);
-        filtrosActivos = filtrosNormalizados;
-        capaDenuncias.clearLayers();
+    async function cargarDenuncias(filtros = {}) {
+        filtrosActivos = filtros;
+        markerLayer.clearLayers();
         marcadoresPorId.clear();
 
         try {
-            const parametrosConsulta =
-                filtrosNormalizados._parametrosConsulta || {};
-            const filtrosValidos = Object.entries(parametrosConsulta).filter(
-                ([, value]) =>
-                    value !== undefined &&
-                    value !== null &&
-                    String(value).trim() !== ""
-            );
+            const parametros = new URLSearchParams();
+            Object.entries(filtros)
+                .filter(([, value]) => value)
+                .forEach(([clave, valor]) => parametros.append(clave, valor));
 
             let paginaUrl = new URL(apiUrl);
-            const parametrosBase = new URLSearchParams(paginaUrl.search);
-
-            filtrosValidos.forEach(([clave, valor]) => {
-                parametrosBase.set(clave, valor);
-            });
-
-            paginaUrl.search = parametrosBase.toString();
+            paginaUrl.search = parametros.toString();
 
             const bounds = [];
             const pendientes = [];
@@ -382,15 +203,11 @@
                 const data = await respuesta.json();
                 (data.results || []).forEach((denuncia) => {
                     agregarMarcador(denuncia, bounds);
-                    if (estadoCoincide(denuncia.estado, ESTADO_NUEVA)) {
+                    if (denuncia.estado === "pendiente") {
                         pendientes.push(denuncia);
-                    } else if (
-                        estadoCoincide(denuncia.estado, ESTADO_EN_GESTION)
-                    ) {
+                    } else if (denuncia.estado === "en_proceso") {
                         enProceso.push(denuncia);
-                    } else if (
-                        estadoCoincide(denuncia.estado, ESTADO_FINALIZADA)
-                    ) {
+                    } else if (denuncia.estado === "resuelta") {
                         resueltas.push(denuncia);
                     }
                 });
@@ -442,13 +259,9 @@
                 contadorResueltas,
                 { mostrarEstado: true }
             );
-            activarTab(filtrosNormalizados.estado);
+            activarTab(filtros.estado);
         } catch (error) {
-            console.error(
-                "Error al cargar las denuncias con los filtros",
-                filtrosNormalizados,
-                error
-            );
+            console.error(error);
             mostrarMensajeGlobal(
                 "No se pudieron cargar las denuncias. Intenta nuevamente.",
                 "danger"
@@ -469,36 +282,23 @@
         }
     }
 
-    function cargarDenunciasPorEstado(estadoDeseado) {
-        const estadoCanonico = obtenerEstadoConsulta(estadoDeseado);
-        const estadoParametro = obtenerEstadoParametro(
-            estadoCanonico || estadoDeseado
-        );
-
-        if (filtrosForm && filtrosForm.estado) {
-            filtrosForm.estado.value =
-                obtenerValorFormularioDesdeEstado(estadoParametro);
-        }
-
-        const filtrosActuales = obtenerFiltrosDesdeFormulario();
-        filtrosActuales.estado = estadoCanonico || "";
-        filtrosActuales.estado_parametro = estadoParametro;
-
-        return cargarMapaConDatos(filtrosActuales);
-    }
-
     function agregarMarcador(denuncia, bounds) {
         if (!denuncia.latitud || !denuncia.longitud) {
             return;
         }
 
-        const marker = L.marker([denuncia.latitud, denuncia.longitud], {
-            icon: iconoSegunEstado(denuncia.estado),
-            title: `#${denuncia.id} · ${obtenerEtiquetaEstado(denuncia)}`,
+        const color = obtenerColorDenuncia(denuncia);
+
+        const marker = L.circleMarker([denuncia.latitud, denuncia.longitud], {
+            radius: 16,
+            fillColor: color,
+            color: "#ffffff",
+            weight: 3,
+            fillOpacity: 1,
         });
 
         marker.bindPopup(construirPopup(denuncia));
-        capaDenuncias.addLayer(marker);
+        markerLayer.addLayer(marker);
         marcadoresPorId.set(Number(denuncia.id), marker);
         bounds.push([denuncia.latitud, denuncia.longitud]);
     }
@@ -794,7 +594,7 @@
             return;
         }
         const leafletBounds = L.latLngBounds(bounds);
-        map.fitBounds(leafletBounds, { padding: [40, 40] });
+        map.fitBounds(leafletBounds, { padding: [10, 10] });
     }
 
     function actualizarMarcaDeTiempo() {
@@ -878,7 +678,7 @@
 
                 feedback.textContent = "Cambios guardados correctamente";
                 feedback.className = "feedback mt-2 text-success";
-                cargarMapaConDatos(filtrosActivos);
+                cargarDenuncias(filtrosActivos);
             } catch (error) {
                 console.error(error);
                 feedback.textContent =
@@ -888,33 +688,22 @@
         });
     });
 
-    if (filtrosForm) {
-        filtrosForm.addEventListener("submit", (event) => {
-            event.preventDefault();
-            const filtros = obtenerFiltrosDesdeFormulario();
-            cargarMapaConDatos(filtros);
-        });
-    }
+    filtrosForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const filtros = {
+            estado: filtrosForm.estado.value,
+            zona: filtrosForm.zona.value,
+            fecha_desde: filtrosForm.fecha_desde.value,
+            fecha_hasta: filtrosForm.fecha_hasta.value,
+        };
+        cargarDenuncias(filtros);
+    });
 
-    if (recargarBtn) {
-        recargarBtn.addEventListener("click", () => {
-            cargarMapaConDatos(filtrosActivos);
-        });
-    }
+    recargarBtn.addEventListener("click", () => {
+        cargarDenuncias(filtrosActivos);
+    });
 
-    if (btnNueva) {
-        btnNueva.onclick = () => cargarDenunciasPorEstado("Nueva");
-    }
-
-    if (btnGestion) {
-        btnGestion.onclick = () => cargarDenunciasPorEstado("En gestión");
-    }
-
-    if (btnFinalizada) {
-        btnFinalizada.onclick = () => cargarDenunciasPorEstado("Finalizada");
-    }
-
-    cargarDenunciasPorEstado("Nueva");
+    cargarDenuncias();
 
     async function extraerMensajeDeError(respuesta) {
         const generico = "No se pudieron guardar los cambios";
