@@ -13,8 +13,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import Denuncia, DenunciaNotificacion
-from .permissions import IsFuncionarioMunicipal
+from .models import Denuncia, DenunciaNotificacion, EstadoDenuncia
+from .permissions import IsFuncionarioMunicipal, PuedeEditarDenunciasFinalizadas
 from .serializers import (
     DenunciaAdminSerializer,
     DenunciaCiudadanoSerializer,
