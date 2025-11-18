@@ -13,7 +13,6 @@ class Usuario(AbstractUser):
         )
         JEFE_CUADRILLA = "jefe_cuadrilla", "Jefe de cuadrilla"
         FISCALIZADOR = "fiscalizador", "Fiscalizador"
-        JEFE_CUADRILLA = "jefe_cuadrilla", "Jefe de cuadrilla"
         ADMINISTRADOR = "administrador", "Administrador"
 
     rol = models.CharField(
