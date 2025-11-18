@@ -500,6 +500,17 @@
         actualizarContador(contadorPendientes, denuncias.length);
     }
 
+    function puedeEditarDenuncia(denuncia) {
+        const estadoActual = normalizarEstado(denuncia.estado);
+        if (esAdministrador) {
+            return estadoActual === "realizado";
+        }
+        if (esFiscalizador) {
+            return estadoActual === "pendiente" || estadoActual === "en_gestion";
+        }
+        return false;
+    }
+
     function crearFilaPendiente(denuncia) {
         const fila = document.createElement("tr");
         fila.dataset.denunciaId = String(denuncia.id);
@@ -534,16 +545,18 @@
             centrarDenunciaEnMapa(denuncia.id, { enfocarFormulario: false });
         });
 
-        const btnEditar = document.createElement("button");
-        btnEditar.type = "button";
-        btnEditar.className = "btn btn-background btn-sm btn-action";
-        btnEditar.textContent = "Editar";
-        btnEditar.addEventListener("click", () => {
-            centrarDenunciaEnMapa(denuncia.id, { enfocarFormulario: true });
-        });
-
         accionesTd.appendChild(btnVisualizar);
-        accionesTd.appendChild(btnEditar);
+
+        if (puedeEditarDenuncia(denuncia)) {
+            const btnEditar = document.createElement("button");
+            btnEditar.type = "button";
+            btnEditar.className = "btn btn-background btn-sm btn-action";
+            btnEditar.textContent = "Editar";
+            btnEditar.addEventListener("click", () => {
+                centrarDenunciaEnMapa(denuncia.id, { enfocarFormulario: true });
+            });
+            accionesTd.appendChild(btnEditar);
+        }
 
         fila.appendChild(idTd);
         fila.appendChild(fechaTd);
@@ -595,16 +608,18 @@
             centrarDenunciaEnMapa(denuncia.id, { enfocarFormulario: false });
         });
 
-        const btnEditar = document.createElement("button");
-        btnEditar.type = "button";
-        btnEditar.className = "btn btn-background btn-sm";
-        btnEditar.textContent = "Editar";
-        btnEditar.addEventListener("click", () => {
-            centrarDenunciaEnMapa(denuncia.id, { enfocarFormulario: true });
-        });
-
         acciones.appendChild(btnVer);
-        acciones.appendChild(btnEditar);
+
+        if (puedeEditarDenuncia(denuncia)) {
+            const btnEditar = document.createElement("button");
+            btnEditar.type = "button";
+            btnEditar.className = "btn btn-background btn-sm";
+            btnEditar.textContent = "Editar";
+            btnEditar.addEventListener("click", () => {
+                centrarDenunciaEnMapa(denuncia.id, { enfocarFormulario: true });
+            });
+            acciones.appendChild(btnEditar);
+        }
 
         item.appendChild(info);
         item.appendChild(acciones);
