@@ -5,26 +5,26 @@
     {{ block.super }}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
     <style>
+
         .panel-denuncias-contenido {
             max-width: none;
             width: 100%;
         }
 
-        .panel-layout {
-            display: grid;
-            gap: 1.5rem;
-        }
-
+        /* Layout inferior: dos columnas */
         @media (max-width: 991.98px) {
             .panel-layout {
+                display: grid;
                 grid-template-columns: 1fr;
+                gap: 1.5rem;
             }
         }
 
         @media (min-width: 992px) {
             .panel-layout {
-                grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr);
-                align-items: start;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1.5rem;
             }
         }
 
@@ -41,19 +41,58 @@
             }
         }
 
+        .filters-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            width: 100%;
+        }
+
         .filters-card {
             background-color: #ffffff;
             border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-            padding: 1.5rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            padding: 0.5rem !important;
+            width: 100%;
+            max-width: 220px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: .5rem;
         }
 
-        .map-card,
+        @media (min-width: 992px) {
+            .filters-card {
+                position: sticky;
+                top: 1rem;
+                height: calc(100vh - 120px);
+                min-height: 200px;
+                align-self: flex-start;
+            }
+        }
+
+        @media (max-width: 991.98px) {
+            .filters-card {
+                position: static;
+                max-width: 100%;
+                height: auto;
+            }
+        }
+
+        .filters-card .form-select,
+        .filters-card .form-control {
+            padding: 6px 8px !important;
+            height: 34px;
+            font-size: 0.9rem;
+        }
+
+        .filters-card button {
+            padding: 6px 8px !important;
+            font-size: 0.9rem !important;
+        }
+
         .map-card .card {
             height: 100%;
-        }
-
-        .map-card .card {
             display: flex;
             flex-direction: column;
         }
@@ -61,44 +100,6 @@
         .map-card .card-body {
             padding: 1rem;
             flex: 1 1 auto;
-        }
-
-        .map-card .card-body > #mapa-denuncias {
-            height: 100%;
-        }
-
-        .leaflet-popup-content {
-            min-width: 260px;
-        }
-
-        .estado-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-weight: 600;
-        }
-
-        .denuncia-marker {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .denuncia-marker .marker-estado {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            border: 2px solid #ffffff;
-            box-shadow: 0 0 6px rgba(0, 0, 0, 0.35);
-        }
-
-        .pendientes-card .table th,
-        .pendientes-card .table td {
-            vertical-align: middle;
-        }
-
-        .pendientes-card .btn-action {
-            min-width: 6rem;
         }
 
         .estado-panel .list-group-item {
@@ -115,25 +116,35 @@
             }
         }
 
-        .estado-panel .estado-label {
-            font-size: 0.875rem;
-            font-weight: 600;
+        .filters-header {
+            width: 100%;
+            border-radius: 8px;
         }
 
-        .estado-panel .acciones {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
+        .filters-header .form-label {
+            font-size: 0.75rem;
         }
 
-        .estado-tabs .btn {
-            white-space: nowrap;
+        .filters-header .form-select,
+        .filters-header .form-control {
+            padding: 4px 6px;
+            height: 32px;
+            font-size: 0.85rem;
         }
+
+        .filters-header button {
+            height: 32px;
+            padding: 4px 6px !important;
+            font-size: 0.85rem !important;
+        }
+
     </style>
 {% endblock extra_head %}
 
 {% block contenido %}
 <div class="contenido contenido-fluid panel-denuncias-contenido">
+
+    <!-- ENCABEZADO -->
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
         <div>
             <h2 class="mb-1">Panel de denuncias</h2>
@@ -144,112 +155,141 @@
         </div>
     </div>
 
-    <div class="panel-layout">
-        <div class="d-flex flex-column gap-4">
-            <section class="filters-card">
-                <h5 class="mb-3">Filtrar resultados</h5>
-                <form id="filtros-form" class="row gy-3 gx-3 align-items-end">
-                    <div class="col-12">
-                        <label for="estado" class="form-label">Estado</label>
-                        <select id="estado" name="estado" class="form-select">
-                            <option value="">Todos</option>
-                            {% for estado in estados_config %}
-                                <option value="{{ estado.value }}">{{ estado.label }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-12">
-                        <label for="zona" class="form-label">Zona</label>
-                        <select id="zona" name="zona" class="form-select">
-                            <option value="">Todas</option>
-                            {% for zona in zonas_disponibles %}
-                                <option value="{{ zona }}">{{ zona }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-12 col-md-6">
-                        <label for="fecha_desde" class="form-label">Desde</label>
-                        <input type="date" id="fecha_desde" name="fecha_desde" class="form-control">
-                    </div>
-                    <div class="col-12 col-md-6">
-                        <label for="fecha_hasta" class="form-label">Hasta</label>
-                        <input type="date" id="fecha_hasta" name="fecha_hasta" class="form-control">
-                    </div>
-                    <div class="col-12 d-grid">
-                        <button type="submit" class="btn btn-background">Aplicar filtros</button>
-                    </div>
-                </form>
-            </section>
+    <!-- CABECERA DE FILTROS -->
+    <div class="filters-header bg-white shadow-sm border rounded p-3 mb-3">
 
-            <section class="pendientes-card">
-                <div class="card shadow-sm border-0">
-                    <div class="card-header bg-white py-3">
-                        <div class="d-flex flex-column flex-xl-row gap-3 align-items-xl-center justify-content-between">
-                            <div>
-                                <h5 class="mb-1">Gestión de denuncias</h5>
-                                <small class="text-muted">Selecciona el estado que deseas revisar.</small>
-                            </div>
-                            <div class="btn-group btn-group-sm estado-tabs" role="group" aria-label="Filtrar por estado">
-                                <button type="button" id="btnNueva" class="btn btn-outline-secondary active estado-tab" data-estado="pendiente">
-                                    {{ estados_por_valor.pendiente.label|default:"Nuevas" }}
-                                    <span class="badge bg-secondary ms-1" id="contador-pendientes">0</span>
-                                </button>
-                                <button type="button" id="btnGestion" class="btn btn-outline-secondary estado-tab" data-estado="en_proceso">
-                                    {{ estados_por_valor.en_proceso.label|default:"En gestión" }}
-                                    <span class="badge bg-secondary ms-1" id="contador-en-proceso">0</span>
-                                </button>
-                                <button type="button" id="btnFinalizada" class="btn btn-outline-secondary estado-tab" data-estado="resuelta">
-                                    {{ estados_por_valor.resuelta.label|default:"Finalizadas" }}
-                                    <span class="badge bg-secondary ms-1" id="contador-resueltas">0</span>
-                                </button>
-                            </div>
+        <form id="filtros-form" class="row g-2 align-items-end">
+
+            <div class="col-12 col-md-3">
+                <label class="form-label mb-1">Estado</label>
+                <select id="estado" name="estado" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    {% for estado in estados_config %}
+                        <option value="{{ estado.value }}">{{ estado.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- >>> CAMPO FALTANTE QUE ROMPÍA EL BUSCADOR <<< -->
+            <div class="col-12 col-md-3">
+                <label class="form-label mb-1">Zona</label>
+                <select id="zona" name="zona" class="form-select form-select-sm">
+                    <option value="">Todas</option>
+                    {% for z in zonas %}
+                        <option value="{{ z }}">{{ z }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <!-- >>> FIN CAMBIO <<< -->
+
+            <div class="col-6 col-md-2">
+                <label class="form-label mb-1">Desde</label>
+                <input type="date" id="fecha_desde" name="fecha_desde" class="form-control form-control-sm">
+            </div>
+
+            <div class="col-6 col-md-2">
+                <label class="form-label mb-1">Hasta</label>
+                <input type="date" id="fecha_hasta" name="fecha_hasta" class="form-control form-control-sm">
+            </div>
+
+            <div class="col-12 col-md-2 d-grid">
+                <button type="submit" class="btn btn-background btn-sm mt-3">
+                    Aplicar filtros
+                </button>
+            </div>
+
+        </form>
+
+    </div>
+
+
+    <!-- PANEL INFERIOR: TABLA + MAPA -->
+    <div class="panel-layout">
+
+        <!-- TABLA / LISTAS -->
+        <section class="pendientes-card">
+            <div class="card shadow-sm border-0">
+
+                <div class="card-header bg-white py-3">
+                    <div class="d-flex flex-column flex-xl-row gap-3 align-items-xl-center justify-content-between">
+                        <div>
+                            <h5 class="mb-1">Gestión de denuncias</h5>
+                            <small class="text-muted">Selecciona el estado que deseas revisar.</small>
                         </div>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="estado-panel active" data-estado="pendiente">
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th scope="col">ID</th>
-                                            <th scope="col">Fecha</th>
-                                            <th scope="col">Descripción</th>
-                                            <th scope="col">Zona</th>
-                                            <th scope="col">Denunciante</th>
-                                            <th scope="col" class="text-end">Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="denuncias-pendientes-body">
-                                        <tr id="sin-denuncias-pendientes">
-                                            <td colspan="6" class="text-center text-muted py-4">
-                                                No hay denuncias nuevas para mostrar.
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
+
+                        <div class="btn-group btn-group-sm estado-tabs" role="group">
+                            <button type="button" class="btn btn-outline-secondary active estado-tab" data-estado="pendiente">
+                                Nuevas
+                                <span class="badge bg-secondary ms-1" id="contador-pendientes">0</span>
+                            </button>
+
+                            <button type="button" class="btn btn-outline-secondary estado-tab" data-estado="en_proceso">
+                                En gestión
+                                <span class="badge bg-secondary ms-1" id="contador-en-proceso">0</span>
+                            </button>
+
+                            <button type="button" class="btn btn-outline-secondary estado-tab" data-estado="resuelta">
+                                Finalizadas
+                                <span class="badge bg-secondary ms-1" id="contador-resueltas">0</span>
+                            </button>
                         </div>
-                        <div class="estado-panel d-none" data-estado="en_proceso">
-                            <div class="list-group list-group-flush" id="denuncias-en-proceso-list">
-                                <div class="list-group-item text-muted py-3" id="sin-denuncias-en-proceso">
-                                    No hay denuncias en gestión para mostrar.
-                                </div>
-                            </div>
-                        </div>
-                        <div class="estado-panel d-none" data-estado="resuelta">
-                            <div class="list-group list-group-flush" id="denuncias-resueltas-list">
-                                <div class="list-group-item text-muted py-3" id="sin-denuncias-resueltas">
-                                    No hay denuncias finalizadas para mostrar.
-                                </div>
-                            </div>
-                        </div>
+
                     </div>
                 </div>
-            </section>
-        </div>
 
+                <div class="card-body p-0">
+
+                    <!-- PENDIENTES -->
+                    <div class="estado-panel active" data-estado="pendiente">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Fecha</th>
+                                        <th>Descripción</th>
+                                        <th>Zona</th>
+                                        <th>Denunciante</th>
+                                        <th class="text-end">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="denuncias-pendientes-body">
+                                    <tr id="sin-denuncias-pendientes">
+                                        <td colspan="6" class="text-center text-muted py-4">
+                                            No hay denuncias nuevas para mostrar.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- EN PROCESO -->
+                    <div class="estado-panel d-none" data-estado="en_proceso">
+                        <div class="list-group list-group-flush" id="denuncias-en-proceso-list">
+                            <div class="list-group-item text-muted py-3" id="sin-denuncias-en-proceso">
+                                No hay denuncias en gestión para mostrar.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RESUELTAS -->
+                    <div class="estado-panel d-none" data-estado="resuelta">
+                        <div class="list-group list-group-flush" id="denuncias-resueltas-list">
+                            <div class="list-group-item text-muted py-3" id="sin-denuncias-resueltas">
+                                No hay denuncias finalizadas para mostrar.
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- MAPA -->
         <div class="map-card">
             <div class="card shadow-sm border-0 h-100">
+
                 <div class="card-header bg-white py-3 d-flex flex-column gap-2">
                     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
                         <h5 class="mb-0">Mapa de denuncias</h5>
@@ -257,17 +297,20 @@
                             <i class="bi bi-arrow-repeat me-1"></i>Recargar datos
                         </button>
                     </div>
-                    <small class="text-muted">Selecciona un caso de la lista o interactúa con los marcadores para editar su información.</small>
+                    <small class="text-muted">Selecciona un caso o edita tocando un marcador.</small>
                 </div>
+
                 <div class="card-body">
                     <div id="mapa-denuncias"
-                         data-token="{{ access_token }}"
-                         data-api-url="{{ api_url }}"
-                         data-update-url="{{ api_update_url }}">
+                        data-token="{{ access_token }}"
+                        data-api-url="{{ api_url }}"
+                        data-update-url="{{ api_update_url }}">
                     </div>
                 </div>
+
             </div>
         </div>
+
     </div>
 </div>
 {% endblock contenido %}
