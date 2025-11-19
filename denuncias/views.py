@@ -28,6 +28,27 @@ from .serializers import (
 logger = logging.getLogger(__name__)
 
 
+def _build_estado_q(estado):
+    equivalentes = EstadoDenuncia.equivalent_values(estado)
+    if not equivalentes:
+        return None
+
+    condicion = Q()
+    for valor in equivalentes:
+        condicion |= Q(estado__iexact=valor)
+    return condicion
+
+
+def _aplicar_filtro_estado(queryset, estado, *, excluir=False):
+    condicion = _build_estado_q(estado)
+    if not condicion:
+        return queryset
+
+    if excluir:
+        return queryset.exclude(condicion)
+    return queryset.filter(condicion)
+
+
 class DenunciasPagination(PageNumberPagination):
     page_size = 50
     page_size_query_param = "page_size"
@@ -48,6 +69,11 @@ class DenunciaListCreateView(APIView):
             )
             .all()
         )
+
+        estado = request.query_params.get("estado")
+        if estado:
+            queryset = _aplicar_filtro_estado(queryset, estado)
+
         serializer = DenunciaSerializer(
             queryset, many=True, context={"request": request}
         )
@@ -150,36 +176,20 @@ class DenunciaAdminListView(generics.ListAPIView):
 
         estado = self.request.query_params.get("estado")
         if estado:
-            estado_normalizado = estado.lower()
-            alias_estado = {
-                "en_proceso": Denuncia.EstadoDenuncia.EN_GESTION,
-                "resuelta": Denuncia.EstadoDenuncia.FINALIZADO,
-                "finalizada": Denuncia.EstadoDenuncia.FINALIZADO,
-            }
-            estado_filtrar = alias_estado.get(
-                estado_normalizado, estado_normalizado
-            )
-            queryset = queryset.filter(estado__iexact=estado_filtrar)
+            queryset = _aplicar_filtro_estado(queryset, estado)
 
         excluir_estado = self.request.query_params.get("excluir_estado")
         if excluir_estado:
-            alias_excluir = {
-                "en_proceso": Denuncia.EstadoDenuncia.EN_GESTION,
-                "resuelta": Denuncia.EstadoDenuncia.FINALIZADO,
-                "finalizada": Denuncia.EstadoDenuncia.FINALIZADO,
-            }
-            excluir_normalizado = alias_excluir.get(
-                excluir_estado.lower(), excluir_estado
+            queryset = _aplicar_filtro_estado(
+                queryset, excluir_estado, excluir=True
             )
-            queryset = queryset.exclude(estado__iexact=excluir_normalizado)
 
         solo_activos = self.request.query_params.get("solo_activos")
         if solo_activos is not None:
             valor_normalizado = str(solo_activos).lower()
             if valor_normalizado in {"1", "true", "t", "yes", "on"}:
-                queryset = queryset.exclude(
-                    Q(estado__iexact=Denuncia.EstadoDenuncia.FINALIZADO)
-                    | Q(estado__iexact="finalizada")
+                queryset = _aplicar_filtro_estado(
+                    queryset, Denuncia.EstadoDenuncia.FINALIZADO, excluir=True
                 )
 
         zona = self.request.query_params.get("zona")
@@ -395,8 +405,10 @@ def panel_cuadrilla(request):
                 reporte.denuncia = denuncia
                 reporte.jefe_cuadrilla = request.user
                 reporte.save()
+
                 denuncia.reporte_cuadrilla = reporte
-                denuncia.save(update_fields=["reporte_cuadrilla"])
+                denuncia.estado = EstadoDenuncia.REALIZADO
+                denuncia.save(update_fields=["reporte_cuadrilla", "estado"])
                 messages.success(request, "El reporte se cargó correctamente.")
                 return redirect("panel_cuadrilla")
     else:

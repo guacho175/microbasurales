@@ -4,7 +4,7 @@ from django.db import models
 class EstadoDenuncia(models.TextChoices):
     PENDIENTE = "pendiente", "Pendiente"
     EN_GESTION = "en_gestion", "En gestión"
-    REALIZADO = "realizado", "Operativo realizado"
+    REALIZADO = "operativo_realizado", "Operativo realizado"
     FINALIZADO = "finalizado", "Finalizado"
 
     @classmethod
@@ -17,7 +17,35 @@ class EstadoDenuncia(models.TextChoices):
     def get_color(cls, estado):
         """Obtiene el color asociado al estado solicitado."""
 
-        return cls.color_map().get(estado, cls.COLOR_DEFAULT)
+        estado_normalizado = cls.normalize(estado)
+        return cls.color_map().get(estado_normalizado, cls.COLOR_DEFAULT)
+
+    @classmethod
+    def normalize(cls, estado):
+        """Retorna el valor canónico del estado solicitado."""
+
+        if estado is None:
+            return estado
+
+        estado_key = _normalizar_valor_estado(estado)
+        if not estado_key:
+            return estado_key
+
+        return _ESTADO_DENUNCIA_ALIAS_MAP.get(estado_key, estado_key)
+
+    @classmethod
+    def equivalent_values(cls, estado):
+        """Devuelve los valores posibles almacenados para un mismo estado."""
+
+        estado_normalizado = cls.normalize(estado)
+        if not estado_normalizado:
+            return set()
+
+        valores = _ESTADO_DENUNCIA_EQUIVALENCIAS.get(estado_normalizado)
+        if valores:
+            return set(valores)
+
+        return {estado_normalizado}
 
     @classmethod
     def as_config(cls):
@@ -31,6 +59,77 @@ class EstadoDenuncia(models.TextChoices):
 
 # Este valor se define fuera de la clase para que Django no lo interprete como choice
 EstadoDenuncia.COLOR_DEFAULT = "#1d3557"
+
+
+def _normalizar_valor_estado(valor):
+    if valor is None:
+        return ""
+    texto = str(valor).strip().lower()
+    texto = texto.replace("-", "_")
+    texto = "_".join(texto.split())
+    return texto
+
+
+_ESTADO_DENUNCIA_EQUIVALENCIAS = {
+    EstadoDenuncia.PENDIENTE: {
+        EstadoDenuncia.PENDIENTE,
+        "nuevo",
+        "nueva",
+        "nuevas",
+        "nuevos",
+    },
+    EstadoDenuncia.EN_GESTION: {
+        EstadoDenuncia.EN_GESTION,
+        "en gestion",
+        "en_gestion",
+        "en proceso",
+        "en_proceso",
+    },
+    EstadoDenuncia.REALIZADO: {
+        EstadoDenuncia.REALIZADO,
+        "realizado",
+        "realizada",
+        "realizadas",
+        "operativo realizado",
+        "operativo_realizado",
+    },
+    EstadoDenuncia.FINALIZADO: {
+        EstadoDenuncia.FINALIZADO,
+        "finalizada",
+        "finalizadas",
+        "resuelto",
+        "resuelta",
+        "resueltos",
+        "resueltas",
+        "cerrado",
+        "cerrada",
+        "cerrados",
+        "cerradas",
+    },
+}
+
+
+_ESTADO_DENUNCIA_ALIAS_MAP = {}
+for canonical, aliases in _ESTADO_DENUNCIA_EQUIVALENCIAS.items():
+    for alias in aliases:
+        clave = _normalizar_valor_estado(alias)
+        if clave:
+            _ESTADO_DENUNCIA_ALIAS_MAP[clave] = canonical
+
+_ESTADO_DENUNCIA_ALIAS_MAP.update(
+    {
+        "pendientes": EstadoDenuncia.PENDIENTE,
+        "nuevas": EstadoDenuncia.PENDIENTE,
+        "nuevo_estado": EstadoDenuncia.PENDIENTE,
+        "en-proceso": EstadoDenuncia.EN_GESTION,
+        "gestion": EstadoDenuncia.EN_GESTION,
+        "gestionandose": EstadoDenuncia.EN_GESTION,
+        "realizados": EstadoDenuncia.REALIZADO,
+        "operativo-realizado": EstadoDenuncia.REALIZADO,
+        "finalizados": EstadoDenuncia.FINALIZADO,
+        "finalizo": EstadoDenuncia.FINALIZADO,
+    }
+)
 
 
 _ESTADO_DENUNCIA_COLOR_MAP = {
