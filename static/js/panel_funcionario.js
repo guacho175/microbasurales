@@ -88,17 +88,42 @@
             ? "pendiente"
             : estadosConfig[0] && estadosConfig[0].value) || "pendiente";
 
+    const ESTADOS_EQUIVALENCIAS = new Map([
+        ["nuevo", "pendiente"],
+        ["nueva", "pendiente"],
+        ["nuevos", "pendiente"],
+        ["nuevas", "pendiente"],
+        ["pendientes", "pendiente"],
+        ["en_proceso", "en_gestion"],
+        ["en-proceso", "en_gestion"],
+        ["enproceso", "en_gestion"],
+        ["gestion", "en_gestion"],
+        ["resuelta", "finalizado"],
+        ["resueltas", "finalizado"],
+        ["resuelto", "finalizado"],
+        ["resueltos", "finalizado"],
+        ["finalizada", "finalizado"],
+        ["finalizadas", "finalizado"],
+        ["finalizo", "finalizado"],
+        ["finalizados", "finalizado"],
+        ["realizada", "realizado"],
+        ["realizadas", "realizado"],
+        ["realizados", "realizado"],
+        ["operativo_realizado", "realizado"],
+        ["operativo-realizado", "realizado"],
+        ["operativo realizado", "realizado"],
+    ]);
+
     function normalizarEstado(valor) {
         if (!valor) {
             return valor;
         }
-        if (valor === "en_proceso") {
-            return "en_gestion";
-        }
-        if (valor === "resuelta") {
-            return "finalizado";
-        }
-        return valor;
+        const clave = valor
+            .toString()
+            .trim()
+            .toLowerCase()
+            .replace(/[-\s]+/g, "_");
+        return ESTADOS_EQUIVALENCIAS.get(clave) || clave;
     }
 
     function obtenerConfigEstado(valor) {
@@ -353,7 +378,7 @@
                 contadorFinalizados,
                 { mostrarEstado: true }
             );
-            activarTab(filtros.estado);
+            activarTab(normalizarEstado(filtros.estado));
         } catch (error) {
             console.error(error);
             mostrarMensajeGlobal(
