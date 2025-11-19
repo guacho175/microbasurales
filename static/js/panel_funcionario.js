@@ -631,79 +631,113 @@
                   reporte.jefe_cuadrilla.nombre || "Sin nombre registrado"
               )
             : "Sin registro";
-        const imagenDenuncia = denuncia.imagen
-            ? `<figure class="mb-0"><img src="${escapeAttribute(
+        const evidenciaDenuncia = denuncia.imagen
+            ? `<figure class="denuncia-card__image-large"><img src="${escapeAttribute(
                   denuncia.imagen
-              )}" alt="Evidencia fotográfica de la denuncia"></figure>`
+              )}" alt="Evidencia fotográfica de la denuncia" loading="lazy"><figcaption>Registro del denunciante</figcaption></figure>`
             : "";
-        const imagenReporte =
+        const evidenciaReporte =
             reporte && reporte.foto_trabajo
-                ? `<figure class="mb-0"><img src="${escapeAttribute(
+                ? `<figure class="denuncia-card__image-large"><img src="${escapeAttribute(
                       reporte.foto_trabajo
-                  )}" alt="Registro fotográfico de la cuadrilla"></figure>`
+                  )}" alt="Registro fotográfico de la cuadrilla" loading="lazy"><figcaption>Reporte de cuadrilla</figcaption></figure>`
                 : "";
-        const mediaHtml = imagenDenuncia || imagenReporte
-            ? `<div class="denuncia-card__media">${imagenDenuncia}${imagenReporte}</div>`
-            : `<div class="denuncia-card__media denuncia-card__media--empty"><div class="denuncia-card__no-image text-muted">Sin material fotográfico disponible.</div></div>`;
+        const galeriaHtml = evidenciaDenuncia || evidenciaReporte
+            ? `<div class="denuncia-card__gallery">${evidenciaDenuncia}${evidenciaReporte}</div>`
+            : `<div class="denuncia-card__gallery denuncia-card__gallery--empty">Sin material fotográfico disponible.</div>`;
+        const miniaturaFuente = denuncia.imagen
+            ? denuncia.imagen
+            : reporte && reporte.foto_trabajo
+              ? reporte.foto_trabajo
+              : null;
+        const miniaturaHtml = miniaturaFuente
+            ? `<img src="${escapeAttribute(
+                  miniaturaFuente
+              )}" alt="Vista previa del caso ${escapeAttribute(denuncia.id)}" loading="lazy">`
+            : `<div class="denuncia-card__thumb-placeholder">Sin imagen</div>`;
 
         return `
             <header class="denuncia-card__header">
                 <div>
-                    <div class="fw-semibold">
-                        <span class="denuncia-card__badge" style="background-color: ${escapeAttribute(
+                    <div class="denuncia-card__case">
+                        <span class="denuncia-card__case-id">Caso #${escapeHtml(
+                            denuncia.id
+                        )}</span>
+                        <span class="denuncia-card__estado" style="background-color: ${escapeAttribute(
                             color
-                        )};"></span>
-                        Caso #${escapeHtml(denuncia.id)}
+                        )};">${estadoEtiqueta}</span>
                     </div>
-                    <div class="small text-muted">Reportado el ${fecha}</div>
-                </div>
-                <div class="denuncia-card__estado" style="background-color: ${escapeAttribute(
-                    color
-                )};">
-                    ${estadoEtiqueta}
+                    <div class="denuncia-card__meta">Reportado el ${fecha}</div>
                 </div>
             </header>
-            <div class="denuncia-card__grid">
-                <div class="denuncia-card__section">
-                    <h6>Descripción y ubicación</h6>
-                    <p class="denuncia-card__text">${descripcion}</p>
-                    <ul class="list-unstyled mb-0 small">
-                        <li><strong>Zona:</strong> ${zona}</li>
-                        <li><strong>Dirección municipal:</strong> ${direccion}</li>
-                        <li><strong>Referencia del denunciante:</strong> ${direccionTextual}</li>
-                        <li><strong>Coordenadas:</strong> ${
-                            coordenadas
-                                ? escapeHtml(coordenadas)
-                                : "Sin coordenadas disponibles"
-                        }</li>
-                        <li><strong>Latitud:</strong> ${latitudTexto}</li>
-                        <li><strong>Longitud:</strong> ${longitudTexto}</li>
+            <div class="denuncia-card__summary">
+                <div>
+                    <p class="denuncia-card__description">${descripcion}</p>
+                    <ul class="denuncia-card__summary-list">
+                        <li class="denuncia-card__summary-item">
+                            <span class="denuncia-card__summary-label">Zona</span>
+                            <span class="denuncia-card__summary-value">${zona}</span>
+                        </li>
+                        <li class="denuncia-card__summary-item">
+                            <span class="denuncia-card__summary-label">Dirección municipal</span>
+                            <span class="denuncia-card__summary-value">${direccion}</span>
+                        </li>
+                        <li class="denuncia-card__summary-item">
+                            <span class="denuncia-card__summary-label">Denunciante</span>
+                            <span class="denuncia-card__summary-value">${denuncianteNombre}</span>
+                        </li>
                     </ul>
                 </div>
-                <div class="denuncia-card__section">
-                    <h6>Denunciante</h6>
-                    <p class="denuncia-card__text"><strong>Nombre:</strong> ${denuncianteNombre}</p>
-                    <p class="denuncia-card__text"><strong>Rol:</strong> ${denuncianteRol}</p>
-                    <p class="denuncia-card__text"><strong>ID usuario:</strong> ${denuncianteId}</p>
-                </div>
-                <div class="denuncia-card__section">
-                    <h6>Gestión municipal</h6>
-                    <p class="denuncia-card__text"><strong>Cuadrilla asignada:</strong> ${cuadrilla}</p>
-                    <p class="denuncia-card__text"><strong>Estado (visual):</strong> ${estadoEtiqueta}</p>
-                    <p class="denuncia-card__text"><strong>Estado (API):</strong> ${estadoValor}</p>
-                    <p class="denuncia-card__text"><strong>Color asociado:</strong> ${escapeHtml(
-                        color
-                    )}</p>
-                </div>
-                <div class="denuncia-card__section">
-                    <h6>Reporte de cuadrilla</h6>
-                    <p class="denuncia-card__text"><strong>ID reporte:</strong> ${reporteId}</p>
-                    <p class="denuncia-card__text"><strong>Fecha del reporte:</strong> ${reporteFecha}</p>
-                    <p class="denuncia-card__text"><strong>Jefe de cuadrilla:</strong> ${jefeCuadrilla}</p>
-                    <p class="denuncia-card__text"><strong>Comentario:</strong> ${reporteComentario}</p>
+                <div class="denuncia-card__thumb">
+                    ${miniaturaHtml}
                 </div>
             </div>
-            ${mediaHtml}
+            <details class="denuncia-card__details">
+                <summary class="denuncia-card__details-toggle"><span>Ver detalles</span></summary>
+                <div class="denuncia-card__details-content">
+                    <div class="denuncia-card__details-grid">
+                        <section class="denuncia-card__detail-group">
+                            <h6>Datos del denunciante</h6>
+                            <ul class="denuncia-card__detail-list">
+                                <li><span>Nombre</span><strong>${denuncianteNombre}</strong></li>
+                                <li><span>Rol</span><strong>${denuncianteRol}</strong></li>
+                                <li><span>ID usuario</span><strong>${denuncianteId}</strong></li>
+                                <li><span>Referencia del denunciante</span><strong>${direccionTextual}</strong></li>
+                            </ul>
+                        </section>
+                        <section class="denuncia-card__detail-group">
+                            <h6>Gestión municipal</h6>
+                            <ul class="denuncia-card__detail-list">
+                                <li><span>Zona</span><strong>${zona}</strong></li>
+                                <li><span>Dirección municipal</span><strong>${direccion}</strong></li>
+                                <li><span>Cuadrilla asignada</span><strong>${cuadrilla}</strong></li>
+                                <li><span>Coordenadas</span><strong>${
+                                    coordenadas
+                                        ? escapeHtml(coordenadas)
+                                        : "Sin coordenadas disponibles"
+                                }</strong></li>
+                                <li><span>Latitud</span><strong>${latitudTexto}</strong></li>
+                                <li><span>Longitud</span><strong>${longitudTexto}</strong></li>
+                                <li><span>Estado (visual)</span><strong>${estadoEtiqueta}</strong></li>
+                                <li><span>Estado (API)</span><strong>${estadoValor}</strong></li>
+                                <li><span>Color asociado</span><strong>${escapeHtml(
+                                    color
+                                )}</strong></li>
+                            </ul>
+                        </section>
+                        <section class="denuncia-card__detail-group">
+                            <h6>Reporte de cuadrilla</h6>
+                            <ul class="denuncia-card__detail-list">
+                                <li><span>ID reporte</span><strong>${reporteId}</strong></li>
+                                <li><span>Fecha del reporte</span><strong>${reporteFecha}</strong></li>
+                                <li><span>Jefe de cuadrilla</span><strong>${jefeCuadrilla}</strong></li>
+                                <li><span>Comentario</span><strong>${reporteComentario}</strong></li>
+                            </ul>
+                        </section>
+                    </div>
+                    ${galeriaHtml}
+                </div>
+            </details>
         `;
     }
 
