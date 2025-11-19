@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block contenido %}
+<div class="contenido contenido-fluid">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <h2 class="mb-1">Usuarios del Sistema</h2>
+            <p class="text-muted mb-0">Listado completo de las cuentas registradas en la plataforma.</p>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Usuario</th>
+                    <th scope="col">Correo</th>
+                    <th scope="col">Nombre</th>
+                    <th scope="col">Rol</th>
+                    <th scope="col">Teléfono</th>
+                    <th scope="col">Dirección</th>
+                    <th scope="col">Creado</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col">Último login</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if usuarios %}
+                    {% for usuario in usuarios %}
+                        <tr>
+                            <td>{{ usuario.id }}</td>
+                            <td class="fw-semibold">{{ usuario.username }}</td>
+                            <td>{{ usuario.email|default:"-" }}</td>
+                            <td>{{ usuario.username|default:"—" }}</td>
+                            <td>
+                                {% if usuario.get_rol_display %}
+                                    {{ usuario.get_rol_display }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ usuario.telefono|default:"-" }}</td>
+                            <td>{{ usuario.direccion|default:"-" }}</td>
+                            <td>{{ usuario.date_joined|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                {% if usuario.is_active %}
+                                    <span class="badge text-bg-success">Activo</span>
+                                {% else %}
+                                    <span class="badge text-bg-secondary">Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if usuario.last_login %}
+                                    {{ usuario.last_login|date:"d/m/Y H:i" }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="10" class="text-center py-4">No hay usuarios registrados.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock contenido %}
