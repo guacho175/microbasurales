@@ -4,7 +4,7 @@ from .views import (
     DenunciaAdminListView,
     DenunciaAdminUpdateView,
     DenunciaListCreateView,
-    JefesCuadrillaListView,
+    JefesCuadrillaList,
     MiDenunciaRetrieveUpdateView,
     MisDenunciasListView,
     MisNotificacionesListView,
@@ -28,8 +28,8 @@ urlpatterns = [
     ),
     path(
         "jefes-cuadrilla/",
-        JefesCuadrillaListView.as_view(),
-        name="jefes_cuadrilla_list",
+        JefesCuadrillaList.as_view(),
+        name="jefes-cuadrilla",
     ),
     path(
         "notificaciones/",
