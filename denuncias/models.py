@@ -144,7 +144,7 @@ _ESTADO_DENUNCIA_ALIAS_MAP.update(
 
 _ESTADO_DENUNCIA_COLOR_MAP = {
     EstadoDenuncia.PENDIENTE: "#d32f2f",
-    EstadoDenuncia.RECHAZADA: "#546e7a",
+    EstadoDenuncia.RECHAZADA: "#c62828",
     EstadoDenuncia.EN_GESTION: "#f57c00",
     EstadoDenuncia.REALIZADO: "#1976d2",
     EstadoDenuncia.FINALIZADO: "#388e3c",
