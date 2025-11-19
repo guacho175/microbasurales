@@ -18,7 +18,7 @@ MOTIVOS_RECHAZO_TEXTOS = {
     "foto_insuficiente": "La denuncia no puede procesarse: evidencia insuficiente (foto poco clara).",
     "no_verificada": "No se logró verificar el microbasural en terreno.",
     "datos_insuficientes": "El reporte no contiene datos suficientes para acudir al lugar.",
-    "ya_gestionada": "La denuncia ya está siendo gestionada bajo otro caso activo.",
+    "ya_gestionada": "La denuncia ya está siendo gestionada bajo otro caso activo. (denuncia duplicada)",
 }
 
 
@@ -205,7 +205,10 @@ class DenunciaAdminSerializer(DenunciaSerializer):
                     EstadoDenuncia.EN_GESTION,
                     EstadoDenuncia.RECHAZADA,
                 },
-                EstadoDenuncia.EN_GESTION: {EstadoDenuncia.REALIZADO},
+                EstadoDenuncia.EN_GESTION: {
+                    EstadoDenuncia.REALIZADO,
+                    EstadoDenuncia.RECHAZADA,
+                },
             }
 
         return {}
@@ -252,11 +255,14 @@ class DenunciaAdminSerializer(DenunciaSerializer):
                 {"estado": "Solo personal fiscalizador puede rechazar denuncias."}
             )
 
-        if estado_actual != EstadoDenuncia.PENDIENTE:
+        if estado_actual not in {
+            EstadoDenuncia.PENDIENTE,
+            EstadoDenuncia.EN_GESTION,
+        }:
             raise serializers.ValidationError(
                 {
                     "estado": (
-                        "La denuncia no puede ser rechazada. Ya está en gestión o en un estado posterior."
+                        "La denuncia no puede ser rechazada desde su estado actual."
                     )
                 }
             )

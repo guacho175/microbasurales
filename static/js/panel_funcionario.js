@@ -88,11 +88,41 @@
         ? rechazoModalElement.querySelector("[data-rechazo-denuncia-id]")
         : null;
     let denunciaRechazoActual = null;
+    const denunciasPorId = new Map();
+    const denunciasPorEstado = {
+        pendiente: [],
+        en_gestion: [],
+        realizado: [],
+        finalizado: [],
+        rechazada: [],
+    };
+    const resumenEstadoConfig = {
+        en_gestion: {
+            contenedor: listaEnGestion,
+            plantilla: sinEnGestionTemplate,
+            contador: contadorEnGestion,
+        },
+        realizado: {
+            contenedor: listaRealizado,
+            plantilla: sinRealizadoTemplate,
+            contador: contadorRealizados,
+        },
+        finalizado: {
+            contenedor: listaFinalizado,
+            plantilla: sinFinalizadoTemplate,
+            contador: contadorFinalizados,
+        },
+        rechazada: {
+            contenedor: listaRechazadas,
+            plantilla: sinRechazadasTemplate,
+            contador: contadorRechazadas,
+        },
+    };
 
     const estadosConfigElement = document.getElementById("estados-config");
     const DEFAULT_ESTADOS_CONFIG = [
         { value: "pendiente", label: "Pendiente", color: "#d32f2f" },
-        { value: "rechazada", label: "Rechazada", color: "#546e7a" },
+        { value: "rechazada", label: "Rechazada", color: "#c62828" },
         { value: "en_gestion", label: "En gestión", color: "#f57c00" },
         { value: "realizado", label: "Realizado", color: "#1976d2" },
         { value: "finalizado", label: "Finalizado", color: "#388e3c" },
@@ -158,6 +188,27 @@
             .toLowerCase()
             .replace(/[-\s]+/g, "_");
         return ESTADOS_EQUIVALENCIAS.get(clave) || clave;
+    }
+
+    function ordenarDenunciasPorFecha(denuncias) {
+        denuncias.sort((a, b) => {
+            const fechaA = a.fecha_creacion ? new Date(a.fecha_creacion) : null;
+            const fechaB = b.fecha_creacion ? new Date(b.fecha_creacion) : null;
+
+            if (fechaA && fechaB) {
+                return fechaA - fechaB;
+            }
+
+            if (fechaA) {
+                return -1;
+            }
+
+            if (fechaB) {
+                return 1;
+            }
+
+            return 0;
+        });
     }
 
     function obtenerConfigEstado(valor) {
@@ -316,7 +367,7 @@
         datos_insuficientes:
             "El reporte no contiene datos suficientes para acudir al lugar.",
         ya_gestionada:
-            "La denuncia ya está siendo gestionada bajo otro caso activo.",
+            "La denuncia ya está siendo gestionada bajo otro caso activo. (denuncia duplicada)",
     };
     const MOTIVOS_RECHAZO_PREDEFINIDOS = new Set(
         Object.values(MOTIVOS_RECHAZO_TEXTOS)
@@ -351,6 +402,10 @@
         filtrosActivos = filtros;
         markerLayer.clearLayers();
         marcadoresPorId.clear();
+        denunciasPorId.clear();
+        Object.keys(denunciasPorEstado).forEach((estado) => {
+            denunciasPorEstado[estado] = [];
+        });
 
         try {
             const parametros = new URLSearchParams();
@@ -384,6 +439,7 @@
                 const data = await respuesta.json();
                 (data.results || []).forEach((denuncia) => {
                     agregarMarcador(denuncia, bounds);
+                    denunciasPorId.set(Number(denuncia.id), denuncia);
                     const estadoNormalizado = normalizarEstado(denuncia.estado);
                     if (estadoNormalizado === "pendiente") {
                         pendientes.push(denuncia);
@@ -405,58 +461,25 @@
                 }
             }
 
-            const comparadorPorFecha = (a, b) => {
-                const fechaA = a.fecha_creacion ? new Date(a.fecha_creacion) : null;
-                const fechaB = b.fecha_creacion ? new Date(b.fecha_creacion) : null;
+            ordenarDenunciasPorFecha(pendientes);
+            ordenarDenunciasPorFecha(enGestion);
+            ordenarDenunciasPorFecha(realizados);
+            ordenarDenunciasPorFecha(finalizados);
+            ordenarDenunciasPorFecha(rechazadas);
 
-                if (fechaA && fechaB) {
-                    return fechaA - fechaB;
-                }
-
-                if (fechaA) {
-                    return -1;
-                }
-
-                if (fechaB) {
-                    return 1;
-                }
-
-                return 0;
-            };
-
-            pendientes.sort(comparadorPorFecha);
-            enGestion.sort(comparadorPorFecha);
-            realizados.sort(comparadorPorFecha);
-            finalizados.sort(comparadorPorFecha);
-            rechazadas.sort(comparadorPorFecha);
+            denunciasPorEstado.pendiente = pendientes.slice();
+            denunciasPorEstado.en_gestion = enGestion.slice();
+            denunciasPorEstado.realizado = realizados.slice();
+            denunciasPorEstado.finalizado = finalizados.slice();
+            denunciasPorEstado.rechazada = rechazadas.slice();
 
             ajustarMapa(bounds);
             actualizarMarcaDeTiempo();
-            actualizarTablaPendientes(pendientes);
-            actualizarResumenEstado(
-                enGestion,
-                listaEnGestion,
-                sinEnGestionTemplate,
-                contadorEnGestion
-            );
-            actualizarResumenEstado(
-                realizados,
-                listaRealizado,
-                sinRealizadoTemplate,
-                contadorRealizados
-            );
-            actualizarResumenEstado(
-                finalizados,
-                listaFinalizado,
-                sinFinalizadoTemplate,
-                contadorFinalizados
-            );
-            actualizarResumenEstado(
-                rechazadas,
-                listaRechazadas,
-                sinRechazadasTemplate,
-                contadorRechazadas
-            );
+            renderEstado("pendiente");
+            renderEstado("en_gestion");
+            renderEstado("realizado");
+            renderEstado("finalizado");
+            renderEstado("rechazada");
             activarTab(normalizarEstado(filtros.estado));
         } catch (error) {
             console.error(error);
@@ -464,31 +487,11 @@
                 "No se pudieron cargar las denuncias. Intenta nuevamente.",
                 "danger"
             );
-            actualizarTablaPendientes([]);
-            actualizarResumenEstado(
-                [],
-                listaEnGestion,
-                sinEnGestionTemplate,
-                contadorEnGestion
-            );
-            actualizarResumenEstado(
-                [],
-                listaRealizado,
-                sinRealizadoTemplate,
-                contadorRealizados
-            );
-            actualizarResumenEstado(
-                [],
-                listaFinalizado,
-                sinFinalizadoTemplate,
-                contadorFinalizados
-            );
-            actualizarResumenEstado(
-                [],
-                listaRechazadas,
-                sinRechazadasTemplate,
-                contadorRechazadas
-            );
+            renderEstado("pendiente");
+            renderEstado("en_gestion");
+            renderEstado("realizado");
+            renderEstado("finalizado");
+            renderEstado("rechazada");
         }
     }
 
@@ -548,7 +551,8 @@
             ? new Date(denuncia.fecha_creacion).toLocaleString("es-CL")
             : "Fecha no disponible";
         const puedeRechazarDenuncia =
-            esFiscalizador && estadoActual === "pendiente";
+            esFiscalizador &&
+            (estadoActual === "pendiente" || estadoActual === "en_gestion");
         const botonRechazoHtml = puedeRechazarDenuncia
             ? `<button type="button" class="btn btn-outline-danger btn-sm w-100 mt-2 btn-rechazar-denuncia" data-denuncia-id="${escapeAttribute(
                   denuncia.id
@@ -771,6 +775,10 @@
         const motivoRechazoHtml = escapeHtml(
             motivoRechazoBruto || "No disponible"
         );
+        const estadoMotivoInline =
+            esRechazada && motivoRechazoBruto
+                ? `<small class="denuncia-card__estado-motivo">Motivo: ${motivoRechazoHtml}</small>`
+                : "";
         const comentarioLibreDetalle =
             esRechazada && motivoRechazoBruto
             && !MOTIVOS_RECHAZO_PREDEFINIDOS.has(motivoRechazoBruto)
@@ -805,6 +813,7 @@
                         <span class="denuncia-card__estado" style="background-color: ${escapeAttribute(
                             color
                         )};">${estadoEtiqueta}</span>
+                        ${estadoMotivoInline}
                     </div>
                     <div class="denuncia-card__meta">Reportado el ${fecha}</div>
                 </div>
@@ -937,6 +946,24 @@
         actualizarContador(contadorElemento, denuncias.length);
     }
 
+    function renderEstado(estado) {
+        const coleccion = denunciasPorEstado[estado] || [];
+        if (estado === "pendiente") {
+            actualizarTablaPendientes(coleccion);
+            return;
+        }
+        const config = resumenEstadoConfig[estado];
+        if (!config) {
+            return;
+        }
+        actualizarResumenEstado(
+            coleccion,
+            config.contenedor,
+            config.plantilla,
+            config.contador
+        );
+    }
+
     function actualizarContador(elemento, total) {
         if (!elemento) {
             return;
@@ -1050,6 +1077,61 @@
         return MOTIVOS_RECHAZO_TEXTOS[opcion] || opcion;
     }
 
+    function actualizarMarcadorDenuncia(denuncia) {
+        const marker = marcadoresPorId.get(Number(denuncia.id));
+        if (!marker) {
+            return;
+        }
+        const color = obtenerColorDenuncia(denuncia);
+        marker.setStyle({ fillColor: color });
+        const popup = marker.getPopup();
+        const nuevoContenido = construirPopup(denuncia);
+        if (popup) {
+            popup.setContent(nuevoContenido);
+        } else {
+            marker.bindPopup(nuevoContenido);
+        }
+    }
+
+    function manejarRechazoLocal(denunciaId, motivoFinal) {
+        const id = Number(denunciaId);
+        const denuncia = denunciasPorId.get(id);
+        if (!denuncia) {
+            cargarDenuncias(filtrosActivos);
+            return;
+        }
+
+        const estadoAnterior = normalizarEstado(denuncia.estado);
+        denuncia.estado = "rechazada";
+        denuncia.estado_display = "Rechazada";
+        denuncia.motivo_rechazo = motivoFinal;
+        const configRechazada = obtenerConfigEstado("rechazada");
+        if (configRechazada && configRechazada.color) {
+            denuncia.color = configRechazada.color;
+        } else {
+            denuncia.color = DEFAULT_MARKER_COLOR;
+        }
+        denunciasPorId.set(id, denuncia);
+
+        if (denunciasPorEstado[estadoAnterior]) {
+            denunciasPorEstado[estadoAnterior] = denunciasPorEstado[
+                estadoAnterior
+            ].filter((item) => Number(item.id) !== id);
+        }
+
+        denunciasPorEstado.rechazada = denunciasPorEstado.rechazada
+            .filter((item) => Number(item.id) !== id);
+        denunciasPorEstado.rechazada.push(denuncia);
+        ordenarDenunciasPorFecha(denunciasPorEstado.rechazada);
+
+        if (denunciasPorEstado[estadoAnterior]) {
+            renderEstado(estadoAnterior);
+        }
+        renderEstado("rechazada");
+        actualizarMarcadorDenuncia(denuncia);
+        activarTab("rechazada");
+    }
+
     function abrirModalRechazo(denunciaId) {
         if (!rechazoModal) {
             return;
@@ -1105,7 +1187,8 @@
             }
 
             try {
-                await enviarActualizacionDenuncia(denunciaRechazoActual.id, {
+                const denunciaId = denunciaRechazoActual.id;
+                await enviarActualizacionDenuncia(denunciaId, {
                     estado: "rechazada",
                     motivo_rechazo: motivoFinal,
                 });
@@ -1115,15 +1198,12 @@
                     "La denuncia fue rechazada correctamente.",
                     "success"
                 );
-                cargarDenuncias(filtrosActivos);
+                manejarRechazoLocal(denunciaId, motivoFinal);
             } catch (error) {
                 console.error(error);
-                const mensaje = (error.message || "").includes(
-                    "La denuncia no puede ser rechazada"
-                )
-                    ? "No es posible rechazar esta denuncia: ya se encuentra en gestión."
-                    : error.message ||
-                      "No se pudo rechazar la denuncia en este momento.";
+                const mensaje =
+                    error.message ||
+                    "No se pudo rechazar la denuncia en este momento.";
                 mostrarErrorRechazo(mensaje);
             }
         });
