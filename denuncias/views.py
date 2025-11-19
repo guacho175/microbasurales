@@ -23,6 +23,7 @@ from .serializers import (
     DenunciaSerializer,
     NotificacionDenunciaSerializer,
 )
+from .utils import obtener_zona_por_coordenadas
 
 
 logger = logging.getLogger(__name__)
@@ -85,7 +86,6 @@ class DenunciaListCreateView(APIView):
         latitud = request.data.get("latitud")
         longitud = request.data.get("longitud")
         direccion = request.data.get("direccion", "").strip()
-        zona = request.data.get("zona", "").strip()
         imagen = request.FILES.get("imagen")
 
         if not descripcion:
@@ -115,6 +115,11 @@ class DenunciaListCreateView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        zona_calculada = obtener_zona_por_coordenadas(
+            latitud_valor,
+            longitud_valor,
+        )
+
         denuncia = Denuncia.objects.create(
             usuario=request.user,
             descripcion=descripcion,
@@ -123,7 +128,7 @@ class DenunciaListCreateView(APIView):
             latitud=latitud_valor,
             longitud=longitud_valor,
             direccion=direccion,
-            zona=zona,
+            zona=zona_calculada,
         )
 
         serializer = DenunciaSerializer(denuncia, context={"request": request})
@@ -172,6 +177,7 @@ class DenunciaAdminListView(generics.ListAPIView):
             "usuario",
             "reporte_cuadrilla",
             "reporte_cuadrilla__jefe_cuadrilla",
+            "jefe_cuadrilla_asignado",
         ).all()
 
         estado = self.request.query_params.get("estado")
@@ -225,6 +231,7 @@ class DenunciaAdminUpdateView(generics.UpdateAPIView):
         "usuario",
         "reporte_cuadrilla",
         "reporte_cuadrilla__jefe_cuadrilla",
+        "jefe_cuadrilla_asignado",
     ).all()
     http_method_names = ["patch", "put"]
 
@@ -232,6 +239,76 @@ class DenunciaAdminUpdateView(generics.UpdateAPIView):
         context = super().get_serializer_context()
         context["request"] = self.request
         return context
+
+    def update(self, request, *args, **kwargs):
+        estado_destino = request.data.get("estado")
+        estado_normalizado = EstadoDenuncia.normalize(estado_destino)
+        partial = request.method.lower() == "patch"
+        instancia = self.get_object()
+
+        if estado_normalizado == EstadoDenuncia.RECHAZADA:
+            if not getattr(request.user, "es_fiscalizador", False):
+                return Response(
+                    {
+                        "estado": [
+                            "Solo personal fiscalizador puede rechazar denuncias.",
+                        ]
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+            motivo = request.data.get("motivo_rechazo")
+            motivo_texto = str(motivo).strip() if motivo is not None else ""
+            if not motivo_texto:
+                return Response(
+                    {
+                        "motivo_rechazo": [
+                            "Debes indicar el motivo del rechazo.",
+                        ]
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        if (
+            estado_normalizado == EstadoDenuncia.EN_GESTION
+            and EstadoDenuncia.normalize(instancia.estado)
+            != EstadoDenuncia.EN_GESTION
+            and not getattr(request.user, "es_fiscalizador", False)
+        ):
+            return Response(
+                {
+                    "estado": [
+                        "Solo personal fiscalizador puede mover la denuncia a 'En gestión'.",
+                    ]
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        serializer = self.get_serializer(
+            instancia, data=request.data, partial=partial
+        )
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        return Response(serializer.data)
+
+
+class JefesCuadrillaListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        if not (
+            getattr(request.user, "es_fiscalizador", False)
+            or getattr(request.user, "es_administrador", False)
+        ):
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        jefes = (
+            Usuario.objects.filter(rol=Usuario.Roles.JEFE_CUADRILLA)
+            .order_by("username")
+            .values("id", "username")
+        )
+        return Response(list(jefes))
 
 
 def _tabla_notificaciones_disponible():
@@ -339,6 +416,9 @@ def _construir_panel_context(request, *, solo_activos=False, solo_finalizados=Fa
         "api_update_url": request.build_absolute_uri(
             reverse("denuncias_admin_update", args=[0])
         ),
+        "jefes_cuadrilla_url": request.build_absolute_uri(
+            reverse("jefes_cuadrilla_list")
+        ),
         "zonas_disponibles": zonas_disponibles,
         "estados_config": estados_config,
         "estados_por_valor": estados_por_valor,
@@ -371,6 +451,7 @@ def panel_cuadrilla(request):
         Denuncia.objects.filter(
             estado=Denuncia.EstadoDenuncia.EN_GESTION,
             reporte_cuadrilla__isnull=True,
+            jefe_cuadrilla_asignado=request.user,
         )
         .select_related("reporte_cuadrilla")
         .order_by("-fecha_creacion")

@@ -3,6 +3,7 @@ from django.db import models
 
 class EstadoDenuncia(models.TextChoices):
     PENDIENTE = "pendiente", "Pendiente"
+    RECHAZADA = "rechazada", "Rechazada"
     EN_GESTION = "en_gestion", "En gestión"
     REALIZADO = "operativo_realizado", "Operativo realizado"
     FINALIZADO = "finalizado", "Finalizado"
@@ -78,6 +79,13 @@ _ESTADO_DENUNCIA_EQUIVALENCIAS = {
         "nuevas",
         "nuevos",
     },
+    EstadoDenuncia.RECHAZADA: {
+        EstadoDenuncia.RECHAZADA,
+        "rechazado",
+        "rechazada",
+        "rechazadas",
+        "rechazados",
+    },
     EstadoDenuncia.EN_GESTION: {
         EstadoDenuncia.EN_GESTION,
         "en gestion",
@@ -121,6 +129,8 @@ _ESTADO_DENUNCIA_ALIAS_MAP.update(
         "pendientes": EstadoDenuncia.PENDIENTE,
         "nuevas": EstadoDenuncia.PENDIENTE,
         "nuevo_estado": EstadoDenuncia.PENDIENTE,
+        "rechazadas": EstadoDenuncia.RECHAZADA,
+        "rechazado": EstadoDenuncia.RECHAZADA,
         "en-proceso": EstadoDenuncia.EN_GESTION,
         "gestion": EstadoDenuncia.EN_GESTION,
         "gestionandose": EstadoDenuncia.EN_GESTION,
@@ -134,6 +144,7 @@ _ESTADO_DENUNCIA_ALIAS_MAP.update(
 
 _ESTADO_DENUNCIA_COLOR_MAP = {
     EstadoDenuncia.PENDIENTE: "#d32f2f",
+    EstadoDenuncia.RECHAZADA: "#c62828",
     EstadoDenuncia.EN_GESTION: "#f57c00",
     EstadoDenuncia.REALIZADO: "#1976d2",
     EstadoDenuncia.FINALIZADO: "#388e3c",
@@ -188,11 +199,31 @@ class Denuncia(models.Model):
         default=EstadoDenuncia.PENDIENTE
     )
 
+    motivo_rechazo = models.TextField(
+        null=True,
+        blank=True,
+        help_text="Motivo detallado cuando la denuncia ha sido rechazada.",
+    )
+
     cuadrilla_asignada = models.CharField(
         max_length=120,
         blank=True,
         default="",
         help_text="Equipo responsable de la gestión de la denuncia.",
+    )
+
+    jefe_cuadrilla_asignado = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="denuncias_asignadas",
+    )
+
+    historial = models.ManyToManyField(
+        "HistorialEstado",
+        related_name="denuncias",
+        blank=True,
     )
 
     # Fecha
@@ -275,3 +306,28 @@ class ReporteCuadrilla(models.Model):
 
     def __str__(self):
         return f"Reporte cuadrilla #{self.pk} (denuncia #{self.denuncia_id})"
+
+
+class HistorialEstado(models.Model):
+    denuncia = models.ForeignKey(
+        "Denuncia",
+        on_delete=models.CASCADE,
+        related_name="historial_registros",
+    )
+    estado_anterior = models.CharField(max_length=50)
+    estado_nuevo = models.CharField(max_length=50)
+    responsable = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    fecha = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-fecha",)
+
+    def __str__(self):
+        return (
+            f"Historial denuncia #{self.denuncia_id}: {self.estado_anterior} → {self.estado_nuevo}"
+        )
