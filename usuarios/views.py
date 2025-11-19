@@ -66,6 +66,9 @@ def login_view(request):
             if rol_usuario == Usuario.Roles.CIUDADANO:
                 return redirect("home")
 
+            if rol_usuario == Usuario.Roles.JEFE_CUADRILLA:
+                return redirect("panel_cuadrilla")
+
             if rol_usuario in {
                 Usuario.Roles.FISCALIZADOR,
                 Usuario.Roles.ADMINISTRADOR,
@@ -102,6 +105,43 @@ def register_view(request):
     )
 
 
+@login_required
+@require_http_methods(["GET", "POST"])
+def crear_funcionario_view(request):
+    if not getattr(request.user, "es_administrador", False):
+        messages.error(request, "No tienes permisos para acceder a esta sección.")
+        return redirect("home")
+
+    roles_disponibles = [
+        (Usuario.Roles.FISCALIZADOR, "Fiscalizador"),
+        (Usuario.Roles.JEFE_CUADRILLA, "Jefe de cuadrilla"),
+    ]
+
+    rol_seleccionado = request.POST.get("rol") or roles_disponibles[0][0]
+    form = RegistroUsuarioForm(request.POST or None)
+
+    if request.method == "POST":
+        if rol_seleccionado not in {opcion[0] for opcion in roles_disponibles}:
+            messages.error(request, "Selecciona un rol válido para el nuevo funcionario.")
+        elif form.is_valid():
+            nuevo_usuario = form.save(rol=rol_seleccionado)
+            messages.success(
+                request,
+                f"El usuario {nuevo_usuario.username} fue creado como {dict(roles_disponibles)[rol_seleccionado]}.",
+            )
+            return redirect("crear_funcionario")
+
+    return render(
+        request,
+        "usuarios/crear_funcionarios.html",
+        {
+            "form": form,
+            "roles_disponibles": roles_disponibles,
+            "rol_seleccionado": rol_seleccionado,
+        },
+    )
+
+
 def aviso_legal_view(request):
     return render(request, "aviso_legal.html")
 
@@ -121,6 +161,9 @@ def home_ciudadano_view(request):
 @login_required
 def home_view(request):
     rol_usuario = getattr(request.user, "rol", None)
+
+    if rol_usuario == Usuario.Roles.JEFE_CUADRILLA:
+        return redirect("panel_cuadrilla")
 
     if rol_usuario != Usuario.Roles.CIUDADANO:
         return redirect("panel_fiscalizador_activos")
@@ -215,3 +258,25 @@ class PerfilPasswordUpdateView(PerfilBaseView):
         messages.error(request, "No se pudo actualizar la contraseña. Revisa los datos.")
         context = self.build_context(request, password_form=form)
         return render(request, self.template_name, context)
+
+
+class UsuariosSistemaView(LoginRequiredMixin, View):
+    """Listado de todos los usuarios, visible solo para administradores."""
+
+    template_name = "usuarios/usuarios_sistema.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not getattr(request.user, "es_administrador", False):
+            messages.error(request, "No tienes permisos para acceder a esta sección.")
+            return redirect("home_ciudadano")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request):
+        usuarios = Usuario.objects.all().order_by("id")
+        return render(
+            request,
+            self.template_name,
+            {
+                "usuarios": usuarios,
+            },
+        )

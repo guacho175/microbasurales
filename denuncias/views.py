@@ -1,7 +1,7 @@
 import logging
-import unicodedata
 from urllib.parse import urlencode
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import OperationalError, ProgrammingError, connection
 from django.db.models import Q
@@ -9,12 +9,12 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.dateparse import parse_date
 from rest_framework import generics, permissions, status
-from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from .forms import ReporteCuadrillaForm
 from .models import Denuncia, DenunciaNotificacion, EstadoDenuncia
 from .permissions import IsFuncionarioMunicipal, PuedeEditarDenunciasFinalizadas
 from .serializers import (
@@ -26,6 +26,27 @@ from .serializers import (
 
 
 logger = logging.getLogger(__name__)
+
+
+def _build_estado_q(estado):
+    equivalentes = EstadoDenuncia.equivalent_values(estado)
+    if not equivalentes:
+        return None
+
+    condicion = Q()
+    for valor in equivalentes:
+        condicion |= Q(estado__iexact=valor)
+    return condicion
+
+
+def _aplicar_filtro_estado(queryset, estado, *, excluir=False):
+    condicion = _build_estado_q(estado)
+    if not condicion:
+        return queryset
+
+    if excluir:
+        return queryset.exclude(condicion)
+    return queryset.filter(condicion)
 
 
 class DenunciasPagination(PageNumberPagination):
@@ -40,82 +61,23 @@ class DenunciaListCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        queryset = Denuncia.objects.select_related("usuario").all()
+        queryset = (
+            Denuncia.objects.select_related(
+                "usuario",
+                "reporte_cuadrilla",
+                "reporte_cuadrilla__jefe_cuadrilla",
+            )
+            .all()
+        )
 
-        queryset = self._aplicar_filtros(request, queryset)
+        estado = request.query_params.get("estado")
+        if estado:
+            queryset = _aplicar_filtro_estado(queryset, estado)
 
         serializer = DenunciaSerializer(
             queryset, many=True, context={"request": request}
         )
         return Response(serializer.data)
-
-    def _aplicar_filtros(self, request, queryset):
-        params = request.query_params
-
-        estado = self._normalizar_estado(params.get("estado"))
-        if estado:
-            queryset = queryset.filter(estado=estado)
-
-        zona = (params.get("zona") or "").strip()
-        if zona:
-            queryset = queryset.filter(zona__iexact=zona)
-
-        fecha_desde = self._obtener_fecha(params, "fecha_desde", "desde")
-        if fecha_desde:
-            queryset = queryset.filter(fecha_creacion__date__gte=fecha_desde)
-
-        fecha_hasta = self._obtener_fecha(params, "fecha_hasta", "hasta")
-        if fecha_hasta:
-            queryset = queryset.filter(fecha_creacion__date__lte=fecha_hasta)
-
-        return queryset.order_by("-fecha_creacion")
-
-    def _obtener_fecha(self, params, *nombres):
-        for nombre in nombres:
-            valor = (params.get(nombre) or "").strip()
-            if not valor:
-                continue
-
-            fecha = parse_date(valor)
-            if fecha:
-                return fecha
-
-            raise ValidationError(
-                {nombre: "Formato de fecha inválido. Usa AAAA-MM-DD."}
-            )
-
-        return None
-
-    def _normalizar_estado(self, valor):
-        estado = (valor or "").strip()
-        if not estado:
-            return ""
-
-        equivalencias = dict(Denuncia.EstadoDenuncia.choices)
-        if estado in equivalencias:
-            return estado
-
-        estado_normalizado = estado.lower()
-        for key in equivalencias:
-            if estado_normalizado == key.lower():
-                return key
-
-        estado_sin_tildes = self._normalizar_texto(estado)
-        for key, label in Denuncia.EstadoDenuncia.choices:
-            if estado_sin_tildes == self._normalizar_texto(label):
-                return key
-
-        return estado
-
-    def _normalizar_texto(self, texto):
-        if not texto:
-            return ""
-
-        texto_normalizado = unicodedata.normalize("NFD", texto)
-        texto_sin_tildes = "".join(
-            char for char in texto_normalizado if unicodedata.category(char) != "Mn"
-        )
-        return texto_sin_tildes.strip().lower()
 
     def post(self, request, *args, **kwargs):
         descripcion = request.data.get("descripcion", "").strip()
@@ -177,6 +139,7 @@ class MisDenunciasListView(generics.ListAPIView):
     def get_queryset(self):
         return (
             Denuncia.objects.filter(usuario=self.request.user)
+            .select_related("reporte_cuadrilla", "reporte_cuadrilla__jefe_cuadrilla")
             .order_by("-fecha_creacion")
         )
 
@@ -188,60 +151,56 @@ class MiDenunciaRetrieveUpdateView(generics.RetrieveUpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Denuncia.objects.filter(usuario=self.request.user)
+        return (
+            Denuncia.objects.filter(usuario=self.request.user)
+            .select_related("reporte_cuadrilla", "reporte_cuadrilla__jefe_cuadrilla")
+        )
 
     def perform_update(self, serializer):
         serializer.save(usuario=self.request.user)
 
 
 class DenunciaAdminListView(generics.ListAPIView):
-    """Lista de denuncias con filtros para funcionarios municipales.
-
-    Ejemplo: ``/api/denuncias/?estado=pendiente&zona=Centro&desde=2024-01-01&hasta=2024-01-31``
-    """
+    """Lista de denuncias con filtros para funcionarios municipales."""
 
     serializer_class = DenunciaAdminSerializer
     permission_classes = [permissions.IsAuthenticated, IsFuncionarioMunicipal]
     pagination_class = DenunciasPagination
 
     def get_queryset(self):
-        queryset = Denuncia.objects.select_related("usuario").all()
+        queryset = Denuncia.objects.select_related(
+            "usuario",
+            "reporte_cuadrilla",
+            "reporte_cuadrilla__jefe_cuadrilla",
+        ).all()
 
         estado = self.request.query_params.get("estado")
         if estado:
-            estado_normalizado = estado.lower()
-            if estado_normalizado in {"finalizado", "finalizada"}:
-                queryset = queryset.filter(
-                    Q(estado__iexact="finalizado")
-                    | Q(estado__iexact="finalizada")
-                    | Q(estado=Denuncia.EstadoDenuncia.RESUELTA)
-                )
-            else:
-                queryset = queryset.filter(estado=estado)
+            queryset = _aplicar_filtro_estado(queryset, estado)
 
         excluir_estado = self.request.query_params.get("excluir_estado")
         if excluir_estado:
-            queryset = queryset.exclude(estado__iexact=excluir_estado)
+            queryset = _aplicar_filtro_estado(
+                queryset, excluir_estado, excluir=True
+            )
 
         solo_activos = self.request.query_params.get("solo_activos")
         if solo_activos is not None:
             valor_normalizado = str(solo_activos).lower()
             if valor_normalizado in {"1", "true", "t", "yes", "on"}:
-                queryset = queryset.exclude(
-                    Q(estado__iexact="finalizado")
-                    | Q(estado__iexact="finalizada")
-                    | Q(estado=Denuncia.EstadoDenuncia.RESUELTA)
+                queryset = _aplicar_filtro_estado(
+                    queryset, Denuncia.EstadoDenuncia.FINALIZADO, excluir=True
                 )
 
         zona = self.request.query_params.get("zona")
         if zona:
             queryset = queryset.filter(zona__iexact=zona)
 
-        fecha_desde = self._parse_fecha_param("fecha_desde", "desde")
+        fecha_desde = parse_date(self.request.query_params.get("fecha_desde", ""))
         if fecha_desde:
             queryset = queryset.filter(fecha_creacion__date__gte=fecha_desde)
 
-        fecha_hasta = self._parse_fecha_param("fecha_hasta", "hasta")
+        fecha_hasta = parse_date(self.request.query_params.get("fecha_hasta", ""))
         if fecha_hasta:
             queryset = queryset.filter(fecha_creacion__date__lte=fecha_hasta)
 
@@ -251,24 +210,6 @@ class DenunciaAdminListView(generics.ListAPIView):
         context = super().get_serializer_context()
         context["request"] = self.request
         return context
-
-    def _parse_fecha_param(self, *nombres):
-        for nombre in nombres:
-            valor = (self.request.query_params.get(nombre) or "").strip()
-            if not valor:
-                continue
-
-            fecha = parse_date(valor)
-            if fecha:
-                return fecha
-
-            raise ValidationError(
-                {
-                    nombre: "Formato de fecha inválido. Usa AAAA-MM-DD.",
-                }
-            )
-
-        return None
 
 
 class DenunciaAdminUpdateView(generics.UpdateAPIView):
@@ -280,7 +221,11 @@ class DenunciaAdminUpdateView(generics.UpdateAPIView):
         IsFuncionarioMunicipal,
         PuedeEditarDenunciasFinalizadas,
     ]
-    queryset = Denuncia.objects.select_related("usuario").all()
+    queryset = Denuncia.objects.select_related(
+        "usuario",
+        "reporte_cuadrilla",
+        "reporte_cuadrilla__jefe_cuadrilla",
+    ).all()
     http_method_names = ["patch", "put"]
 
     def get_serializer_context(self):
@@ -380,7 +325,7 @@ def _construir_panel_context(request, *, solo_activos=False, solo_finalizados=Fa
     query_params = {}
 
     if solo_finalizados:
-        query_params["estado"] = Denuncia.EstadoDenuncia.RESUELTA
+        query_params["estado"] = Denuncia.EstadoDenuncia.FINALIZADO
     elif solo_activos:
         query_params["solo_activos"] = "1"
 
@@ -412,6 +357,73 @@ def _panel_fiscalizador_response(request, *, solo_activos=False, solo_finalizado
         solo_finalizados=solo_finalizados,
     )
     return render(request, "denuncias/panel_funcionario.html", context)
+
+
+@login_required
+def panel_cuadrilla(request):
+    """Panel exclusivo para jefes de cuadrilla."""
+
+    if not getattr(request.user, "es_jefe_cuadrilla", False):
+        messages.error(request, "No tienes permisos para acceder a este panel.")
+        return redirect("home_ciudadano")
+
+    denuncias_en_gestion = (
+        Denuncia.objects.filter(estado=Denuncia.EstadoDenuncia.EN_GESTION)
+        .select_related("reporte_cuadrilla")
+        .order_by("-fecha_creacion")
+    )
+
+    form = None
+    selected_denuncia = None
+
+    def _obtener_denuncia(denuncia_id):
+        if not denuncia_id:
+            return None
+        try:
+            return denuncias_en_gestion.get(pk=int(denuncia_id))
+        except (Denuncia.DoesNotExist, ValueError, TypeError):
+            return None
+
+    if request.method == "POST":
+        form = ReporteCuadrillaForm(request.POST, request.FILES)
+        selected_denuncia = _obtener_denuncia(form.data.get("denuncia_id"))
+
+        if form.is_valid():
+            denuncia = selected_denuncia
+            if not denuncia:
+                form.add_error(
+                    None,
+                    "La denuncia seleccionada no está disponible para la cuadrilla.",
+                )
+            elif denuncia.reporte_cuadrilla:
+                form.add_error(
+                    None,
+                    "Esta denuncia ya cuenta con un reporte cargado.",
+                )
+            else:
+                reporte = form.save(commit=False)
+                reporte.denuncia = denuncia
+                reporte.jefe_cuadrilla = request.user
+                reporte.save()
+
+                denuncia.reporte_cuadrilla = reporte
+                denuncia.estado = EstadoDenuncia.REALIZADO
+                denuncia.save(update_fields=["reporte_cuadrilla", "estado"])
+                messages.success(request, "El reporte se cargó correctamente.")
+                return redirect("panel_cuadrilla")
+    else:
+        selected_denuncia = _obtener_denuncia(request.GET.get("denuncia"))
+        if selected_denuncia:
+            form = ReporteCuadrillaForm(
+                initial={"denuncia_id": selected_denuncia.pk}
+            )
+
+    context = {
+        "denuncias": denuncias_en_gestion,
+        "selected_denuncia": selected_denuncia,
+        "form": form,
+    }
+    return render(request, "denuncias/panel_cuadrilla.html", context)
 
 
 @login_required
