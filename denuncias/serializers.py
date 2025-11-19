@@ -43,7 +43,9 @@ class DenunciaSerializer(serializers.ModelSerializer):
         source="get_estado_display", read_only=True
     )
     color = serializers.SerializerMethodField()
-    reporte_cuadrilla = ReporteCuadrillaSerializer(read_only=True)
+    reporte_cuadrilla = ReporteCuadrillaSerializer(
+        read_only=True, allow_null=True
+    )
 
     class Meta:
         model = Denuncia
@@ -100,9 +102,10 @@ class DenunciaAdminSerializer(DenunciaSerializer):
         }
 
     def validate_estado(self, value):
-        if value not in dict(EstadoDenuncia.choices):
+        estado_normalizado = EstadoDenuncia.normalize(value)
+        if estado_normalizado not in dict(EstadoDenuncia.choices):
             raise serializers.ValidationError("Estado no válido.")
-        return value
+        return estado_normalizado
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
