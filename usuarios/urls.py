@@ -13,6 +13,7 @@ from .views import (
     PerfilView,
     politica_privacidad_view,
     register_view,
+    UsuariosSistemaView,
 )
 
 
@@ -37,6 +38,7 @@ urlpatterns = [
     path('perfil/', PerfilView.as_view(), name='perfil'),
     path('perfil/cambiar-clave/', PerfilPasswordUpdateView.as_view(), name='perfil_cambiar_clave'),
     path('funcionarios/crear/', crear_funcionario_view, name='crear_funcionario'),
+    path('panel/usuarios-sistema/', UsuariosSistemaView.as_view(), name='usuarios_sistema'),
 
 
     path('home/', home_view, name="home"),

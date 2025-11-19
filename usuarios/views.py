@@ -258,3 +258,25 @@ class PerfilPasswordUpdateView(PerfilBaseView):
         messages.error(request, "No se pudo actualizar la contraseña. Revisa los datos.")
         context = self.build_context(request, password_form=form)
         return render(request, self.template_name, context)
+
+
+class UsuariosSistemaView(LoginRequiredMixin, View):
+    """Listado de todos los usuarios, visible solo para administradores."""
+
+    template_name = "usuarios/usuarios_sistema.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not getattr(request.user, "es_administrador", False):
+            messages.error(request, "No tienes permisos para acceder a esta sección.")
+            return redirect("home_ciudadano")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request):
+        usuarios = Usuario.objects.all().order_by("id")
+        return render(
+            request,
+            self.template_name,
+            {
+                "usuarios": usuarios,
+            },
+        )
