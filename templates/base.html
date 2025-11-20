@@ -30,13 +30,14 @@
             background-color: #f4f4f4;
             color: #232323;
             font-family: Arial, sans-serif;
-            padding-top: 85px;
+            padding-top: 60px;
+            zoom: 100%;
         }
 
         .main-navbar {
             background-color: #c62828 !important;
-            min-height: 75px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+            min-height: 60px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
         }
 
         .navbar-toggler {
@@ -49,18 +50,18 @@
 
         .navbar-welcome {
             color: #ffffff;
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 700;
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding-left: 8px;
+            gap: 8px;
+            padding-left: 6px;
         }
 
         .navbar-nav .nav-link {
             color: #ffffff !important;
             font-weight: 500;
-            padding: 0 16px !important;
+            padding: 0 12px !important;
             transition: background-color 0.2s ease;
             border-bottom: 2px solid transparent;
         }
@@ -75,16 +76,16 @@
 
         /* CONTENIDO */
         .content {
-            padding: 20px;
+            padding: 16px;
         }
 
         .contenido {
             max-width: 1100px;
             width: 100%;
             background-color: #ffffff;
-            padding: 18px;
-            border-radius: 6px;
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+            padding: 14px 16px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.12);
         }
 
         .contenido.contenido-fluid {
@@ -136,7 +137,7 @@
     {% url 'perfil' as perfil_url %}
     {% url 'logout' as logout_url %}
     <nav class="navbar navbar-expand-lg main-navbar fixed-top">
-        <div class="container-fluid">
+        <div class="container">
             <div class="navbar-welcome">
                 <i class="bi bi-person-circle"></i>
                 <span>Bienvenido, {{ user.username }}</span>
