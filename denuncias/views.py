@@ -10,6 +10,7 @@ from django.urls import reverse
 from django.utils.dateparse import parse_date
 from rest_framework import generics, permissions, status
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -24,6 +25,7 @@ from .serializers import (
     NotificacionDenunciaSerializer,
 )
 from .utils import obtener_zona_por_coordenadas
+from usuarios.models import Usuario
 
 
 logger = logging.getLogger(__name__)
@@ -284,6 +286,19 @@ class DenunciaAdminUpdateView(generics.UpdateAPIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
+        if (
+            estado_normalizado == EstadoDenuncia.EN_GESTION
+            and not request.data.get("jefe_cuadrilla_asignado_id")
+        ):
+            return Response(
+                {
+                    "jefe_cuadrilla_asignado_id": [
+                        "Debes seleccionar un jefe de cuadrilla para continuar.",
+                    ]
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         serializer = self.get_serializer(
             instancia, data=request.data, partial=partial
         )
@@ -293,22 +308,19 @@ class DenunciaAdminUpdateView(generics.UpdateAPIView):
         return Response(serializer.data)
 
 
-class JefesCuadrillaListView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+class JefesCuadrillaList(APIView):
+    permission_classes = [IsAuthenticated]
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request):
         if not (
             getattr(request.user, "es_fiscalizador", False)
             or getattr(request.user, "es_administrador", False)
         ):
             return Response(status=status.HTTP_403_FORBIDDEN)
 
-        jefes = (
-            Usuario.objects.filter(rol=Usuario.Roles.JEFE_CUADRILLA)
-            .order_by("username")
-            .values("id", "username")
-        )
-        return Response(list(jefes))
+        jefes = Usuario.objects.filter(rol=Usuario.Roles.JEFE_CUADRILLA)
+        data = [{"id": j.id, "username": j.username} for j in jefes]
+        return Response(data, status=status.HTTP_200_OK)
 
 
 def _tabla_notificaciones_disponible():

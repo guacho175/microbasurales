@@ -261,36 +261,44 @@
         return escapeHtml(texto);
     }
 
-    async function obtenerJefesCuadrilla() {
+    async function cargarJefesCuadrilla() {
         if (!esFiscalizador || !jefesCuadrillaUrl) {
             return [];
         }
+
         if (jefesCuadrillaCache.length) {
             return jefesCuadrillaCache.slice();
         }
+
         if (jefesCuadrillaPromise) {
             return jefesCuadrillaPromise;
         }
-        jefesCuadrillaPromise = fetch(jefesCuadrillaUrl, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                Accept: "application/json",
-            },
-            credentials: "same-origin",
-        })
-            .then((response) => {
+
+        jefesCuadrillaPromise = (async () => {
+            try {
+                const response = await fetch(jefesCuadrillaUrl, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: "application/json",
+                    },
+                });
+
                 if (!response.ok) {
-                    throw new Error("Error al cargar los jefes de cuadrilla");
+                    console.error("Error cargando jefes:", response.status);
+                    return [];
                 }
-                return response.json();
-            })
-            .then((data) => {
+
+                const data = await response.json();
                 jefesCuadrillaCache = Array.isArray(data) ? data : [];
                 return jefesCuadrillaCache.slice();
-            })
-            .finally(() => {
+            } catch (error) {
+                console.error("Error cargando jefes:", error);
+                return [];
+            } finally {
                 jefesCuadrillaPromise = null;
-            });
+            }
+        })();
+
         return jefesCuadrillaPromise;
     }
 
@@ -306,7 +314,7 @@
         const lista = wrapper.querySelector("[data-lista-jefes]");
         const loading = wrapper.querySelector("[data-jefes-loading]");
         const inputJefe = wrapper.querySelector(
-            'input[name="jefe_cuadrilla_asignado"]'
+            'input[name="jefe_cuadrilla_asignado_id"]'
         );
         const inputCuadrilla = wrapper.querySelector(
             'input[name="cuadrilla_asignada"]'
@@ -331,10 +339,8 @@
         function actualizarSeleccionVisual(jefe) {
             if (seleccionTexto) {
                 const texto = jefe
-                    ? `Seleccionado: ${escapeHtml(jefe.username)} (#${escapeHtml(
-                          jefe.id
-                      )})`
-                    : "Seleccionado: Ninguno";
+                    ? `Seleccionado: ${escapeHtml(jefe.username)}`
+                    : "Seleccionado: No asignado";
                 seleccionTexto.textContent = texto;
             }
             if (inputCuadrilla) {
@@ -373,7 +379,7 @@
             opcion.click();
         });
 
-        obtenerJefesCuadrilla()
+        cargarJefesCuadrilla()
             .then((jefes) => {
                 lista.innerHTML = "";
                 if (!jefes.length) {
@@ -682,10 +688,8 @@
 
         const jefeAsignado = denuncia.jefe_cuadrilla_asignado || null;
         const jefeAsignadoTexto = jefeAsignado
-            ? `${escapeHtml(jefeAsignado.username)} (#${escapeHtml(
-                  jefeAsignado.id
-              )})`
-            : "Ninguno";
+            ? `${escapeHtml(jefeAsignado.username)}`
+            : "No asignado";
         const cuadrilla =
             denuncia.cuadrilla_asignada ||
             (jefeAsignado && jefeAsignado.username) ||
@@ -730,7 +734,7 @@
                         <input type="hidden" name="cuadrilla_asignada" value="${escapeAttribute(
                             cuadrilla
                         )}">
-                        <input type="hidden" name="jefe_cuadrilla_asignado" value="${
+                        <input type="hidden" name="jefe_cuadrilla_asignado_id" value="${
                             jefeAsignado ? escapeAttribute(jefeAsignado.id) : ""
                         }">
                         <div class="accordion accordion-flush">
@@ -751,8 +755,10 @@
                                         <div class="small text-muted mb-2" data-jefe-seleccion>Seleccionado: ${
                                             jefeAsignadoTexto
                                         }</div>
-                                        <div class="text-center small text-muted" data-jefes-loading>Cargando jefes de cuadrilla...</div>
-                                        <ul class="list-group list-group-flush d-none" data-lista-jefes></ul>
+                                        <div id="lista-jefes">
+                                            <div class="text-center small text-muted" data-jefes-loading>Cargando jefes de cuadrilla...</div>
+                                            <ul class="list-group list-group-flush d-none" data-lista-jefes></ul>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -911,9 +917,7 @@
                 : "-";
         const jefeAsignado = denuncia.jefe_cuadrilla_asignado || null;
         const jefeAsignadoTexto = jefeAsignado
-            ? `${escapeHtml(jefeAsignado.username)} (#${escapeHtml(
-                  jefeAsignado.id
-              )})`
+            ? `${escapeHtml(jefeAsignado.username)}`
             : "No asignado";
         const cuadrilla = escapeHtml(
             denuncia.cuadrilla_asignada ||
@@ -1455,9 +1459,9 @@
             if (cuadrillaAsignada !== null) {
                 payload.cuadrilla_asignada = (cuadrillaAsignada || "").trim();
             }
-            const jefeSeleccionado = formData.get("jefe_cuadrilla_asignado");
+            const jefeSeleccionado = formData.get("jefe_cuadrilla_asignado_id");
             if (jefeSeleccionado) {
-                payload.jefe_cuadrilla_asignado = Number(jefeSeleccionado);
+                payload.jefe_cuadrilla_asignado_id = Number(jefeSeleccionado);
             }
 
             const estadoObjetivo = formData.get("estado");
@@ -1468,7 +1472,7 @@
             if (
                 esFiscalizador &&
                 payload.estado === "en_gestion" &&
-                !payload.jefe_cuadrilla_asignado
+                !payload.jefe_cuadrilla_asignado_id
             ) {
                 feedback.textContent =
                     "Debes seleccionar un jefe de cuadrilla antes de continuar.";
