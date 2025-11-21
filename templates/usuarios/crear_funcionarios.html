@@ -142,6 +142,69 @@
         margin-top: 0.25rem !important;
     }
 
+    /* Alerta flotante de éxito */
+    .alert-floating {
+        position: fixed;
+        top: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999;
+        border-radius: 6px;
+        padding: 1rem 1.5rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        animation: slideDown 0.4s ease-out;
+        min-width: 300px;
+        max-width: 90%;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    }
+
+    @keyframes slideUp {
+        to {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-20px);
+        }
+    }
+
+    .alert-floating.alert-success {
+        background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+        color: white;
+        font-weight: 500;
+    }
+
+    .alert-floating.alert-danger {
+        background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%);
+        color: white;
+        font-weight: 500;
+    }
+
+    .alert-floating .close-btn {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+    }
+
+    .alert-floating .close-btn:hover {
+        opacity: 0.8;
+    }
+
     @media (max-width: 575px) {
         .crear-funcionarios-wrapper {
             padding: 0.5rem;
@@ -167,11 +230,80 @@
         .crear-funcionarios-header p {
             font-size: 0.8rem;
         }
+
+        .alert-floating {
+            min-width: auto;
+            width: calc(100% - 2rem);
+            left: 1rem;
+            right: 1rem;
+            transform: none;
+        }
     }
 </style>
 {% endblock extra_head %}
 
 {% block contenido %}
+<!-- Alertas flotantes solo del sistema (messages) -->
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert-floating alert-{{ message.tags }}" role="alert">
+            {{ message }}
+            <button type="button" class="close-btn" onclick="this.parentElement.remove()">×</button>
+        </div>
+        <script>
+            setTimeout(function() {
+                const alert = document.querySelector('.alert-floating');
+                if (alert) {
+                    alert.style.animation = 'slideUp 0.4s ease-out forwards';
+                }
+            }, 4000);
+        </script>
+    {% endfor %}
+{% endif %}
+
+<!-- Alertas flotantes para errores del formulario -->
+{% if form.non_field_errors or form.username.errors or form.email.errors or form.password1.errors or form.password2.errors %}
+    <div class="alert-floating alert-danger" role="alert">
+        <strong>Errores en el formulario:</strong>
+        <ul style="margin: 0.5rem 0 0 1.5rem; padding: 0;">
+            {% if form.non_field_errors %}
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            {% endif %}
+            {% if form.username.errors %}
+                {% for error in form.username.errors %}
+                    <li><strong>Usuario:</strong> {{ error }}</li>
+                {% endfor %}
+            {% endif %}
+            {% if form.email.errors %}
+                {% for error in form.email.errors %}
+                    <li><strong>Email:</strong> {{ error }}</li>
+                {% endfor %}
+            {% endif %}
+            {% if form.password1.errors %}
+                {% for error in form.password1.errors %}
+                    <li><strong>Contraseña:</strong> {{ error }}</li>
+                {% endfor %}
+            {% endif %}
+            {% if form.password2.errors %}
+                {% for error in form.password2.errors %}
+                    <li><strong>Confirmar contraseña:</strong> {{ error }}</li>
+                {% endfor %}
+            {% endif %}
+        </ul>
+        <button type="button" class="close-btn" onclick="this.parentElement.remove()">×</button>
+    </div>
+    <script>
+        setTimeout(function() {
+            const alert = document.querySelector('.alert-floating.alert-danger');
+            if (alert) {
+                alert.style.animation = 'slideUp 0.4s ease-out forwards';
+            }
+        }, 6000);
+    </script>
+{% endif %}
+
 <div class="crear-funcionarios-wrapper">
     <div class="crear-funcionarios-card">
         <div class="crear-funcionarios-header">
@@ -181,40 +313,21 @@
         <div class="crear-funcionarios-body">
             <form method="post" novalidate>
                 {% csrf_token %}
-                {% if form.non_field_errors %}
-                    <div class="alert alert-danger">
-                        {% for error in form.non_field_errors %}
-                            <div>{{ error }}</div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
                 <div class="mb-3">
                     <label class="form-label" for="id_username">Nombre de usuario</label>
                     {{ form.username }}
-                    {% for error in form.username.errors %}
-                        <div class="alert alert-danger py-1 px-2 mt-2">{{ error }}</div>
-                    {% endfor %}
                 </div>
                 <div class="mb-3">
                     <label class="form-label" for="id_email">Correo electrónico</label>
                     {{ form.email }}
-                    {% for error in form.email.errors %}
-                        <div class="alert alert-danger py-1 px-2 mt-2">{{ error }}</div>
-                    {% endfor %}
                 </div>
                 <div class="mb-3">
                     <label class="form-label" for="id_password1">Contraseña</label>
                     {{ form.password1 }}
-                    {% for error in form.password1.errors %}
-                        <div class="alert alert-danger py-1 px-2 mt-2">{{ error }}</div>
-                    {% endfor %}
                 </div>
                 <div class="mb-3">
                     <label class="form-label" for="id_password2">Confirmar contraseña</label>
                     {{ form.password2 }}
-                    {% for error in form.password2.errors %}
-                        <div class="alert alert-danger py-1 px-2 mt-2">{{ error }}</div>
-                    {% endfor %}
                 </div>
                 <div class="mb-4">
                     <label class="form-label" for="rol">Rol del funcionario</label>
@@ -224,12 +337,9 @@
                         {% endfor %}
                     </select>
                 </div>
-            </form>
-        </div>
-        <div class="form-group-button">
-            <form method="post">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-primary">Crear funcionario</button>
+                <div class="form-group-button" style="margin-left: -1rem; margin-right: -1rem; margin-bottom: -1rem; margin-top: 0.65rem; background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%); padding: 0.6rem 1rem;">
+                    <button type="submit" class="btn btn-primary" style="margin: 0; padding: 0.6rem 1.2rem; border-radius: 0;">Crear funcionario</button>
+                </div>
             </form>
         </div>
     </div>

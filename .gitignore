@@ -4,6 +4,4 @@ __pycache__/
 *.sqlite3
 .env
 *.log
-"__pycache__/" 
-"*.pyc" 
-"media/" 
+media/
