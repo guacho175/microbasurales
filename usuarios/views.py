@@ -143,6 +143,7 @@ def crear_funcionario_view(request):
             "form": form,
             "roles_disponibles": roles_disponibles,
             "rol_seleccionado": rol_seleccionado,
+            "page": "crear_funcionario",
         },
     )
 
