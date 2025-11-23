@@ -18,7 +18,6 @@ from .views import (
     UsuariosSistemaView,
 )
 
-
 urlpatterns = [
     # LOGIN HTML (plantilla roja)
     path('login-django/', login_view, name='login_django'),

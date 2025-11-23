@@ -44,20 +44,23 @@ class Usuario(AbstractUser):
     @property
     def es_administrador(self) -> bool:
         """True para cuentas administrativas o superusuarios."""
-
         return self.rol == self.Roles.ADMINISTRADOR or self.is_superuser
-
-    @property
-    def es_jefe_cuadrilla(self) -> bool:
-        """True para el rol de jefe de cuadrilla."""
-
-        return self.rol == self.Roles.JEFE_CUADRILLA
 
     @property
     def puede_gestionar_denuncias(self) -> bool:
         """Indica si el usuario puede acceder al panel de denuncias especializado."""
-
         return self.es_fiscalizador or self.es_administrador
+
+    def tiene_rol(self, *roles: str) -> bool:
+        """
+        Devuelve True si el rol actual del usuario está incluido en la lista de roles.
+
+        Ejemplo:
+            user.tiene_rol(Usuario.Roles.FISCALIZADOR, Usuario.Roles.ADMINISTRADOR)
+        """
+        if not roles:
+            return False
+        return self.rol in roles
 
     def __str__(self):
         return f"{self.username} ({self.rol})"

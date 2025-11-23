@@ -420,6 +420,8 @@ def _construir_panel_context(request, *, solo_activos=False, solo_finalizados=Fa
 
     api_url = base_api_url
     if query_params:
+        from urllib.parse import urlencode
+
         api_url = f"{base_api_url}?{urlencode(query_params)}"
 
     jefes_cuadrilla = []
@@ -441,13 +443,16 @@ def _construir_panel_context(request, *, solo_activos=False, solo_finalizados=Fa
             exc_info=True,
         )
 
+    # 🔴 AQUÍ ESTABA EL PROBLEMA: antes jefes_cuadrilla_url = None
     return {
         "access_token": str(refresh.access_token),
         "api_url": api_url,
         "api_update_url": request.build_absolute_uri(
             reverse("denuncias_admin_update", args=[0])
         ),
-        "jefes_cuadrilla_url": None,
+        "jefes_cuadrilla_url": request.build_absolute_uri(
+            reverse("jefes-cuadrilla")
+        ),
         "zonas_disponibles": zonas_disponibles,
         "estados_config": estados_config,
         "estados_por_valor": estados_por_valor,
@@ -458,14 +463,19 @@ def _construir_panel_context(request, *, solo_activos=False, solo_finalizados=Fa
 
 
 def _panel_fiscalizador_response(request, *, solo_activos=False, solo_finalizados=False):
+    """Genera la respuesta del panel de fiscalizadores con filtros personalizados."""
+
     if not _usuario_puede_gestionar_denuncias(request.user):
-        return redirect("home")
+        messages.error(request, "No tienes permisos para acceder a este panel.")
+        return redirect("home_ciudadano")
 
     context = _construir_panel_context(
         request,
         solo_activos=solo_activos,
         solo_finalizados=solo_finalizados,
     )
+
+    # 🔥 Corrección: el template real se llama panel_funcionario.html
     return render(request, "denuncias/panel_funcionario.html", context)
 
 
