@@ -50,6 +50,7 @@ import {
     // 🔥 CARGA DE JEFES EMBEBIDOS DESDE DJANGO (json_script)
     // ========================================================
     let jefesCuadrillaDatos = [];
+    let jefesCuadrillaReady = Promise.resolve(jefesCuadrillaDatos);
 
     const jefesScript = document.getElementById("jefes-cuadrilla-data");
     if (jefesScript) {
@@ -57,6 +58,7 @@ import {
             const parsed = JSON.parse(jefesScript.textContent || "[]");
             if (Array.isArray(parsed)) {
                 jefesCuadrillaDatos = parsed;
+                jefesCuadrillaReady = Promise.resolve(jefesCuadrillaDatos);
             }
             console.log("Jefes embebidos cargados:", jefesCuadrillaDatos);
         } catch (error) {
@@ -74,7 +76,7 @@ import {
             : null;
 
     if (esFiscalizador && jefesCuadrillaUrl) {
-        cargarJefesCuadrilla({
+        jefesCuadrillaReady = cargarJefesCuadrilla({
             esFiscalizador,
             jefesCuadrillaUrl,
             token,
@@ -84,10 +86,12 @@ import {
                     jefesCuadrillaDatos = lista;
                     console.log("Jefes actualizados via API:", lista);
                 }
+                return jefesCuadrillaDatos;
             })
-            .catch((err) =>
-                console.warn("Error cargando jefes desde API", err)
-            );
+            .catch((err) => {
+                console.warn("Error cargando jefes desde API", err);
+                return jefesCuadrillaDatos;
+            });
     }
 
 
@@ -323,6 +327,7 @@ import {
 
     async function cargarDenuncias(filtros = {}) {
         filtrosActivos = filtros;
+        await jefesCuadrillaReady.catch(() => []);
         markerLayer.clearLayers();
         marcadoresPorId.clear();
         denunciasPorId.clear();
