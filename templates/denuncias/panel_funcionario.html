@@ -568,8 +568,12 @@
 
                 <div class="card-header bg-white py-2">
                     <div class="d-flex flex-column flex-xl-row gap-2 align-items-xl-center justify-content-between">
-                        <div style="flex-shrink: 0;">
+                        <div class="d-flex align-items-center gap-2" style="flex-shrink: 0;">
                             <small class="text-muted d-block" style="font-size: 0.7rem; white-space: nowrap;">Selecciona el estado.</small>
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="mostrar-todas-btn">
+                                Todas las denuncias
+                                <span class="badge bg-secondary ms-1" id="contador-todas">0</span>
+                            </button>
                         </div>
 
                         <div class="btn-group btn-group-sm estado-tabs" role="group" style="flex-grow: 1; min-width: 0;">
@@ -649,25 +653,6 @@
                         </div>
                     </div>
 
-                </div>
-            </div>
-        </section>
-
-        <section class="todas-card">
-            <div class="card shadow-sm border-0 mt-3">
-                <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="fw-semibold">Todas las denuncias</div>
-                        <small class="text-muted">Resumen filtrado con los criterios actuales</small>
-                    </div>
-                    <span class="badge bg-secondary" id="contador-todas">0</span>
-                </div>
-                <div class="card-body p-0">
-                    <div class="denuncias-list" id="denuncias-todas-list">
-                        <div class="denuncia-empty" id="sin-denuncias-todas">
-                            No hay denuncias para mostrar con los filtros actuales.
-                        </div>
-                    </div>
                 </div>
             </div>
         </section>

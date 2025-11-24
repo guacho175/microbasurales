@@ -16,9 +16,14 @@ export function construirAccordionPendiente(denuncia, helpers) {
     item.innerHTML = `
         <h2 class="accordion-header" id="${headingId}">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}">
-                <div class="d-flex flex-column flex-md-row gap-1 w-100 justify-content-between align-items-start align-items-md-center">
-                    <span>Caso #${escapeHtml(denuncia.id)} - ${descripcion}</span>
-                    <span class="text-muted small">Creada: ${escapeHtml(fechaCreacion)}</span>
+                <div class="d-flex flex-column gap-2 w-100">
+                    <div class="d-flex justify-content-between align-items-center text-muted small fw-semibold">
+                        <span>ID: #${escapeHtml(denuncia.id)}</span>
+                        <span>${escapeHtml(fechaCreacion)}</span>
+                    </div>
+                    <div class="d-flex flex-column flex-md-row gap-1 w-100 justify-content-between align-items-start align-items-md-center">
+                        <span class="fw-semibold">${descripcion}</span>
+                    </div>
                 </div>
             </button>
         </h2>
