@@ -747,5 +747,5 @@
     {{ estados_config|json_script:"estados-config" }}
     {{ jefes_cuadrilla|json_script:"jefes-cuadrilla-data" }}
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="{% static 'js/panel_funcionario.js' %}"></script>
+    <script type="module" src="{% static 'js/panel_funcionario/index.js' %}"></script>
 {% endblock extra_scripts %}
