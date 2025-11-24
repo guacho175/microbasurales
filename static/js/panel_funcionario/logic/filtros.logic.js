@@ -27,9 +27,17 @@ export function conectarFiltros({
 
     if (mostrarTodasBtn) {
         mostrarTodasBtn.addEventListener("click", () => {
+            const redirectUrl = mostrarTodasBtn.dataset.url;
+
+            if (redirectUrl) {
+                window.location.href = redirectUrl;
+                return;
+            }
+
             if (formulario) {
                 formulario.reset();
             }
+
             onFiltrar({});
         });
     }

@@ -492,6 +492,16 @@
             flex-shrink: 0;
         }
 
+        .accordion-button {
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .accordion-button.collapsed .accordion-meta,
+        .accordion-button .accordion-meta {
+            display: flex;
+        }
+
         .accordion-button .accordion-meta {
             width: 100%;
             justify-content: space-between;
@@ -560,7 +570,7 @@
                     <button type="submit" class="btn btn-danger btn-sm px-3">
                         Aplicar filtros
                     </button>
-                    <button type="button" class="btn btn-danger btn-sm px-3 mt-1" id="todas-denuncias-btn">
+                    <button type="button" class="btn btn-danger btn-sm px-3 mt-1" id="todas-denuncias-btn" data-url="{% url 'panel_denuncias_nuevas' %}">
                         Todas las denuncias
                     </button>
                 </div>
@@ -584,9 +594,6 @@
                     <div class="d-flex flex-column flex-xl-row gap-2 align-items-xl-center justify-content-between">
                         <div class="d-flex align-items-center gap-2" style="flex-shrink: 0;">
                             <small class="text-muted d-block" style="font-size: 0.7rem; white-space: nowrap;">Selecciona el estado.</small>
-                            <a class="btn btn-outline-primary btn-sm" href="{% url 'panel_denuncias_nuevas' %}">
-                                Nuevas en tabla
-                            </a>
                         </div>
 
                         <div class="btn-group btn-group-sm estado-tabs" role="group" style="flex-grow: 1; min-width: 0;">
