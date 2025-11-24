@@ -1,4 +1,5 @@
 import { escapeAttribute, escapeHtml } from "../utils/html.js";
+import { formatearFecha } from "../utils/formatters.js";
 import { construirDenunciaHtml } from "./tarjetaDenuncia.ui.js";
 
 export function construirAccordionPendiente(denuncia, helpers) {
@@ -8,13 +9,17 @@ export function construirAccordionPendiente(denuncia, helpers) {
     item.className = "accordion-item";
     item.dataset.id = String(denuncia.id);
     const descripcion = escapeHtml(denuncia.descripcion || "Sin descripción registrada");
+    const fechaCreacion = formatearFecha(denuncia.fecha_creacion);
     const jefeActual =
         (denuncia.jefe_cuadrilla_asignado && denuncia.jefe_cuadrilla_asignado.id) || "";
 
     item.innerHTML = `
         <h2 class="accordion-header" id="${headingId}">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}">
-                Caso #${escapeHtml(denuncia.id)} - ${descripcion}
+                <div class="d-flex flex-column flex-md-row gap-1 w-100 justify-content-between align-items-start align-items-md-center">
+                    <span>Caso #${escapeHtml(denuncia.id)} - ${descripcion}</span>
+                    <span class="text-muted small">Creada: ${escapeHtml(fechaCreacion)}</span>
+                </div>
             </button>
         </h2>
         <div id="${collapseId}" class="accordion-collapse collapse" aria-labelledby="${headingId}" data-bs-parent="#pendientes-accordion">

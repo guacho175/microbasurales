@@ -54,11 +54,20 @@ export function initPanelFuncionario() {
     const contadorPendientes = document.getElementById("contador-pendientes");
     const sinDenunciasTemplate = clonarContenido(sinDenunciasRow);
 
+    const listaTodas = document.getElementById("denuncias-todas-list");
+    const sinTodasElemento = document.getElementById("sin-denuncias-todas");
+    const contadorTodas = document.getElementById("contador-todas");
+    const sinTodasTemplate = clonarContenido(sinTodasElemento);
+
     const estadoTabs = document.querySelectorAll(".estado-tab");
     const estadoPaneles = document.querySelectorAll(".estado-panel");
 
     if (sinDenunciasRow) {
         sinDenunciasRow.remove();
+    }
+
+    if (sinTodasElemento) {
+        sinTodasElemento.remove();
     }
 
     const listaEnGestion = document.getElementById("denuncias-en-gestion-list");
@@ -115,6 +124,7 @@ export function initPanelFuncionario() {
         finalizado: [],
         rechazada: [],
     };
+    let denunciasCargadas = [];
     const resumenEstadoConfig = {
         en_gestion: {
             contenedor: listaEnGestion,
@@ -511,6 +521,30 @@ export function initPanelFuncionario() {
         cargarDenuncias(filtrosActivos);
     }
 
+    function renderTodas(denuncias) {
+        if (!listaTodas) {
+            return;
+        }
+
+        limpiarElemento(listaTodas);
+
+        if (!denuncias.length) {
+            if (sinTodasTemplate) {
+                listaTodas.appendChild(clonarContenido(sinTodasTemplate));
+            }
+            actualizarContador(contadorTodas, 0);
+            return;
+        }
+
+        denuncias.forEach((denuncia) => {
+            const tarjeta = crearTarjetaDenuncia(denuncia, helpersComunes, {
+                mostrarAcciones: false,
+            });
+            listaTodas.appendChild(tarjeta);
+        });
+        actualizarContador(contadorTodas, denuncias.length);
+    }
+
     function actualizarResumenEstado(denuncias, contenedor, plantillaVacia, contadorElemento) {
         if (!contenedor) {
             return;
@@ -568,6 +602,7 @@ export function initPanelFuncionario() {
     }
 
     function renderDenuncias(denuncias, bounds) {
+        denunciasCargadas = denuncias.slice();
         denuncias.forEach((denuncia) => {
             mapManager.agregarMarcador(denuncia, bounds);
             denunciasPorId.set(Number(denuncia.id), denuncia);
@@ -606,6 +641,7 @@ export function initPanelFuncionario() {
             renderEstado("realizado");
             renderEstado("finalizado");
             renderEstado("rechazada");
+            renderTodas(denunciasCargadas);
             activarTab(estadosUtils.normalizarEstado(filtros.estado));
         } catch (error) {
             console.error(error);
@@ -618,6 +654,7 @@ export function initPanelFuncionario() {
             renderEstado("realizado");
             renderEstado("finalizado");
             renderEstado("rechazada");
+            renderTodas([]);
         }
     }
 
