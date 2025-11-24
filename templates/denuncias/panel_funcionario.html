@@ -674,7 +674,8 @@
                         data-update-url="{{ api_update_url }}"
                         data-jefes-url="{{ jefes_cuadrilla_url }}"
                         data-es-fiscalizador="{{ request.user.es_fiscalizador|yesno:'true,false' }}"
-                        data-es-administrador="{{ request.user.es_administrador|yesno:'true,false' }}">
+                        data-es-administrador="{{ request.user.es_administrador|yesno:'true,false' }}"
+                        data-es-funcionario="{{ request.user.es_funcionario_municipal|yesno:'true,false' }}">
                     </div>
                 </div>
 
@@ -747,5 +748,5 @@
     {{ estados_config|json_script:"estados-config" }}
     {{ jefes_cuadrilla|json_script:"jefes-cuadrilla-data" }}
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="{% static 'js/panel_funcionario.js' %}"></script>
+    <script type="module" src="{% static 'js/panel_funcionario/index.js' %}"></script>
 {% endblock extra_scripts %}

@@ -262,6 +262,14 @@ class DenunciaAdminSerializer(DenunciaSerializer):
                 },
             }
 
+        es_funcionario = getattr(usuario, "es_funcionario_municipal", False)
+        if callable(es_funcionario):
+            es_funcionario = es_funcionario()
+        if es_funcionario:
+            return {
+                EstadoDenuncia.PENDIENTE: {EstadoDenuncia.RECHAZADA},
+            }
+
         return {}
 
     def _crear_notificacion_estado(self, denuncia, nuevo_estado):
@@ -301,9 +309,17 @@ class DenunciaAdminSerializer(DenunciaSerializer):
         return f"Tu denuncia #{denuncia.id} cambió de estado a \"{estado_display}\"."
 
     def _validar_rechazo(self, usuario, estado_actual, attrs):
-        if not getattr(usuario, "es_fiscalizador", False):
+        es_fiscalizador = getattr(usuario, "es_fiscalizador", False)
+        es_funcionario = getattr(usuario, "es_funcionario_municipal", False)
+        if callable(es_funcionario):
+            es_funcionario = es_funcionario()
+
+        if not (
+            es_fiscalizador
+            or (es_funcionario and estado_actual == EstadoDenuncia.PENDIENTE)
+        ):
             raise serializers.ValidationError(
-                {"estado": "Solo personal fiscalizador puede rechazar denuncias."}
+                {"estado": "Solo personal autorizado puede rechazar denuncias."}
             )
 
         if estado_actual not in {

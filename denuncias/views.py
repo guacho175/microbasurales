@@ -249,11 +249,20 @@ class DenunciaAdminUpdateView(generics.UpdateAPIView):
         instancia = self.get_object()
 
         if estado_normalizado == EstadoDenuncia.RECHAZADA:
-            if not getattr(request.user, "es_fiscalizador", False):
+            es_fiscalizador = getattr(request.user, "es_fiscalizador", False)
+            es_funcionario = getattr(request.user, "es_funcionario_municipal", False)
+            if callable(es_funcionario):
+                es_funcionario = es_funcionario()
+            estado_actual = EstadoDenuncia.normalize(instancia.estado)
+            puede_rechazar = es_fiscalizador or (
+                es_funcionario and estado_actual == EstadoDenuncia.PENDIENTE
+            )
+
+            if not puede_rechazar:
                 return Response(
                     {
                         "estado": [
-                            "Solo personal fiscalizador puede rechazar denuncias.",
+                            "Solo personal autorizado puede rechazar denuncias.",
                         ]
                     },
                     status=status.HTTP_403_FORBIDDEN,
