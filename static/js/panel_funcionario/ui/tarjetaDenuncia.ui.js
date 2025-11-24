@@ -49,8 +49,7 @@ export function construirFormularioGestion(denuncia, helpers) {
         : "";
     const reporteAtributos = puedeEditarReporte ? "" : "readonly";
     const puedeRechazarDenuncia =
-        (esFiscalizador &&
-            (estadoActual === "pendiente" || estadoActual === "en_gestion")) ||
+        (esFiscalizador && estadoActual === "pendiente") ||
         (esFuncionario && estadoActual === "pendiente");
     const textoRechazo = esFiscalizador ? "Rechazar denuncia" : "Eliminar denuncia";
     const botonRechazoHtml = puedeRechazarDenuncia

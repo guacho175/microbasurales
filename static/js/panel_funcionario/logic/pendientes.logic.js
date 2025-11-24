@@ -78,6 +78,65 @@ export function crearGestorPendientes({
         });
     }
 
+    function prepararToggleAccordion(accordion) {
+        accordion.querySelectorAll(".accordion-button").forEach((boton) => {
+            if (boton.dataset.toggleAttached === "true") {
+                return;
+            }
+
+            const targetSelector = boton.getAttribute("data-bs-target");
+            if (!targetSelector) {
+                return;
+            }
+
+            const destino = accordion.querySelector(targetSelector);
+            if (!destino) {
+                return;
+            }
+
+            const colapsoInstancia =
+                window.bootstrap?.Collapse?.getOrCreateInstance(destino, {
+                    toggle: false,
+                }) || null;
+
+            boton.dataset.toggleAttached = "true";
+            boton.addEventListener("click", (event) => {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                if (colapsoInstancia) {
+                    colapsoInstancia.toggle();
+                    return;
+                }
+
+                const abierto = destino.classList.contains("show");
+
+                accordion.querySelectorAll(".accordion-collapse.show").forEach((item) => {
+                    if (item === destino) {
+                        return;
+                    }
+                    item.classList.remove("show");
+                    const header = accordion.querySelector(
+                        `button[data-bs-target='#${item.id}']`
+                    );
+                    if (header) {
+                        header.classList.add("collapsed");
+                        header.setAttribute("aria-expanded", "false");
+                    }
+                });
+
+                if (abierto) {
+                    destino.classList.remove("show");
+                    boton.classList.add("collapsed");
+                    boton.setAttribute("aria-expanded", "false");
+                } else {
+                    destino.classList.add("show");
+                    boton.classList.remove("collapsed");
+                    boton.setAttribute("aria-expanded", "true");
+                }
+            });
+        });
+    }
+
     function renderPendientes(denuncias) {
         if (!contenedor) {
             return;
@@ -118,6 +177,7 @@ export function crearGestorPendientes({
 
         contenedor.appendChild(accordion);
         prepararAsignacionPendientes(accordion);
+        prepararToggleAccordion(accordion);
 
         actualizarContador(contador, denuncias.length);
     }

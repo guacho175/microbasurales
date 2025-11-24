@@ -11,7 +11,7 @@ export function crearGestorEstados({
             return estadoActual === "realizado";
         }
         if (esFiscalizador) {
-            return estadoActual === "pendiente" || estadoActual === "en_gestion";
+            return estadoActual === "pendiente";
         }
         if (esFuncionario) {
             return estadoActual === "pendiente";
@@ -31,9 +31,6 @@ export function crearGestorEstados({
         if (esFiscalizador) {
             if (estadoActual === "pendiente") {
                 return [estadoActual, "en_gestion"];
-            }
-            if (estadoActual === "en_gestion") {
-                return [estadoActual, "realizado"];
             }
             return [estadoActual];
         }
@@ -69,9 +66,7 @@ export function crearGestorEstados({
         puedeEliminarDenuncia: (denuncia) => {
             const estadoActual = normalizarEstado(denuncia.estado);
             if (esFiscalizador) {
-                return (
-                    estadoActual === "pendiente" || estadoActual === "en_gestion"
-                );
+                return estadoActual === "pendiente";
             }
             if (esFuncionario) {
                 return estadoActual === "pendiente";
