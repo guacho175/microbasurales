@@ -492,6 +492,13 @@
             flex-shrink: 0;
         }
 
+        .accordion-button .accordion-meta {
+            width: 100%;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: #0f172a;
+        }
+
         .accordion-meta span {
             color: #0f172a;
         }
@@ -549,9 +556,12 @@
                     <input type="date" id="fecha_hasta" name="fecha_hasta" class="form-control form-control-sm">
                 </div>
 
-                <div class="d-flex align-items-end">
+                <div class="d-flex flex-column align-items-stretch">
                     <button type="submit" class="btn btn-danger btn-sm px-3">
                         Aplicar filtros
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm px-3 mt-1" id="todas-denuncias-btn">
+                        Todas las denuncias
                     </button>
                 </div>
 

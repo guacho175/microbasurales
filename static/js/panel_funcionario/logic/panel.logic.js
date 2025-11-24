@@ -48,6 +48,7 @@ export function initPanelFuncionario() {
 
     const ultimaActualizacion = document.getElementById("ultima-actualizacion");
     const filtrosForm = document.getElementById("filtros-form");
+    const todasDenunciasBtn = document.getElementById("todas-denuncias-btn");
     const recargarBtn = document.getElementById("recargar-btn");
     const listaPendientes = document.getElementById("denuncias-pendientes-list");
     const sinDenunciasRow = document.getElementById("sin-denuncias-pendientes");
@@ -688,6 +689,7 @@ export function initPanelFuncionario() {
     conectarFiltros({
         formulario: filtrosForm,
         recargarBtn,
+        mostrarTodasBtn: todasDenunciasBtn,
         onFiltrar: (filtros) => cargarDenuncias(filtros),
         obtenerFiltrosActuales: () => filtrosActivos,
     });
