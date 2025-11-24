@@ -54,24 +54,6 @@ export function initPanelFuncionario() {
     const contadorPendientes = document.getElementById("contador-pendientes");
     const sinDenunciasTemplate = clonarContenido(sinDenunciasRow);
 
-    const mostrarTodasBtn = document.getElementById("mostrar-todas-btn");
-    const pendientesCardBody = document.querySelector(".pendientes-card .card-body");
-    const listaTodas = document.createElement("div");
-    listaTodas.className = "denuncias-list d-none border-top pt-2";
-    listaTodas.id = "denuncias-todas-list";
-    const contadorTodas = document.getElementById("contador-todas");
-
-    const sinTodasTemplate = () => {
-        const vacio = document.createElement("div");
-        vacio.className = "denuncia-empty";
-        vacio.textContent = "No hay denuncias para mostrar con los filtros actuales.";
-        return vacio;
-    };
-
-    if (pendientesCardBody) {
-        pendientesCardBody.appendChild(listaTodas);
-    }
-
     const estadoTabs = document.querySelectorAll(".estado-tab");
     const estadoPaneles = document.querySelectorAll(".estado-panel");
 
@@ -530,31 +512,6 @@ export function initPanelFuncionario() {
         cargarDenuncias(filtrosActivos);
     }
 
-    function renderTodas(denuncias) {
-        if (!listaTodas) {
-            return;
-        }
-
-        limpiarElemento(listaTodas);
-
-        if (!denuncias.length) {
-            const vacio = sinTodasTemplate ? sinTodasTemplate() : null;
-            if (vacio) {
-                listaTodas.appendChild(vacio);
-            }
-            actualizarContador(contadorTodas, 0);
-            return;
-        }
-
-        denuncias.forEach((denuncia) => {
-            const tarjeta = crearTarjetaDenuncia(denuncia, helpersComunes, {
-                mostrarAcciones: false,
-            });
-            listaTodas.appendChild(tarjeta);
-        });
-        actualizarContador(contadorTodas, denuncias.length);
-    }
-
     function actualizarResumenEstado(denuncias, contenedor, plantillaVacia, contadorElemento) {
         if (!contenedor) {
             return;
@@ -651,7 +608,6 @@ export function initPanelFuncionario() {
             renderEstado("realizado");
             renderEstado("finalizado");
             renderEstado("rechazada");
-            renderTodas(denunciasCargadas);
             activarTab(estadosUtils.normalizarEstado(filtros.estado));
         } catch (error) {
             console.error(error);
@@ -664,7 +620,6 @@ export function initPanelFuncionario() {
             renderEstado("realizado");
             renderEstado("finalizado");
             renderEstado("rechazada");
-            renderTodas([]);
         }
     }
 
@@ -703,24 +658,6 @@ export function initPanelFuncionario() {
             activarTab(tab.dataset.estado);
         });
     });
-
-    if (mostrarTodasBtn) {
-        mostrarTodasBtn.addEventListener("click", () => {
-            if (!listaTodas) {
-                return;
-            }
-            const visible = !listaTodas.classList.contains("d-none");
-            if (visible) {
-                listaTodas.classList.add("d-none");
-                mostrarTodasBtn.classList.remove("active");
-            } else {
-                listaTodas.classList.remove("d-none");
-                mostrarTodasBtn.classList.add("active");
-                renderTodas(denunciasCargadas);
-                listaTodas.scrollIntoView({ behavior: "smooth", block: "start" });
-            }
-        });
-    }
 
     if (modalImagenElemento && modalImagenImg && modalImagen) {
         modalImagenElemento.addEventListener("hidden.bs.modal", () => {

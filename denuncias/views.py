@@ -479,6 +479,26 @@ def _panel_fiscalizador_response(request, *, solo_activos=False, solo_finalizado
 
 
 @login_required
+def panel_denuncias_nuevas(request):
+    """Vista de solo lectura para listar denuncias pendientes en formato tabla."""
+
+    if not _usuario_puede_gestionar_denuncias(request.user):
+        return redirect("home")
+
+    denuncias_nuevas = (
+        Denuncia.objects.filter(estado=Denuncia.EstadoDenuncia.PENDIENTE)
+        .select_related("usuario")
+        .order_by("-fecha_creacion")
+    )
+
+    return render(
+        request,
+        "denuncias/denuncias_nuevas_tabla.html",
+        {"denuncias": denuncias_nuevas},
+    )
+
+
+@login_required
 def panel_cuadrilla(request):
     """Panel exclusivo para jefes de cuadrilla."""
 

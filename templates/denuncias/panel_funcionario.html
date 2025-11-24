@@ -492,6 +492,10 @@
             flex-shrink: 0;
         }
 
+        .accordion-meta span {
+            color: #0f172a;
+        }
+
     </style>
 {% endblock extra_head %}
 
@@ -570,10 +574,9 @@
                     <div class="d-flex flex-column flex-xl-row gap-2 align-items-xl-center justify-content-between">
                         <div class="d-flex align-items-center gap-2" style="flex-shrink: 0;">
                             <small class="text-muted d-block" style="font-size: 0.7rem; white-space: nowrap;">Selecciona el estado.</small>
-                            <button type="button" class="btn btn-outline-primary btn-sm" id="mostrar-todas-btn">
-                                Todas las denuncias
-                                <span class="badge bg-secondary ms-1" id="contador-todas">0</span>
-                            </button>
+                            <a class="btn btn-outline-primary btn-sm" href="{% url 'panel_denuncias_nuevas' %}">
+                                Nuevas en tabla
+                            </a>
                         </div>
 
                         <div class="btn-group btn-group-sm estado-tabs" role="group" style="flex-grow: 1; min-width: 0;">

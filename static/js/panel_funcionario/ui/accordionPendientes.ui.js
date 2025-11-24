@@ -17,7 +17,7 @@ export function construirAccordionPendiente(denuncia, helpers) {
         <h2 class="accordion-header" id="${headingId}">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}">
                 <div class="d-flex flex-column gap-2 w-100">
-                    <div class="d-flex justify-content-between align-items-center text-muted small fw-semibold">
+                    <div class="d-flex justify-content-between align-items-center accordion-meta small fw-semibold">
                         <span>ID: #${escapeHtml(denuncia.id)}</span>
                         <span>${escapeHtml(fechaCreacion)}</span>
                     </div>

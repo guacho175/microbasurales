@@ -6,6 +6,7 @@ from django.urls import include, path
 from denuncias.views import (
     panel_cuadrilla,
     panel_denuncias_alias,
+    panel_denuncias_nuevas,
     panel_fiscalizador_activos,
     panel_fiscalizador_finalizados,
 )
@@ -16,6 +17,7 @@ urlpatterns = [
     path('home/', home_ciudadano_view, name='home_ciudadano'),
     path('', include('usuarios.urls')),
     path('panel/denuncias/', panel_denuncias_alias, name='panel_denuncias'),
+    path('panel/denuncias/nuevas/', panel_denuncias_nuevas, name='panel_denuncias_nuevas'),
     path('panel/denuncias/activos/', panel_fiscalizador_activos, name='panel_fiscalizador_activos'),
     path('panel/denuncias/finalizados/', panel_fiscalizador_finalizados, name='panel_fiscalizador_finalizados'),
     path('panel/cuadrilla/', panel_cuadrilla, name='panel_cuadrilla'),
