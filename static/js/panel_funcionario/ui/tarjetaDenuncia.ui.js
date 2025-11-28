@@ -1,5 +1,7 @@
 import { formatearCoordenadas, formatearFecha } from "../utils/formatters.js";
 import { escapeAttribute, escapeHtml } from "../utils/html.js";
+import { construirCabeceraAccordion } from "./accordionHeader.ui.js";
+
 
 export function construirFormularioGestion(denuncia, helpers) {
     const {
@@ -221,15 +223,17 @@ export function construirDenunciaHtml(denuncia, helpers) {
     return `
         <details class="denuncia-card__details" open>
             <summary class="denuncia-card__summary d-flex gap-2 align-items-center">
-                <span class="denuncia-card__estado" style="background-color: ${escapeAttribute(
-                    color
-                )}"></span>
+                <span class="denuncia-card__estado" style="background-color: ${escapeAttribute(color)}"></span>
                 <div>
-                    <div class="fw-semibold">Caso #${escapeHtml(denuncia.id)}</div>
+                    <div class="fw-semibold">${construirCabeceraAccordion(denuncia)}</div>
                     <div class="small text-muted">${estadoEtiqueta} • ${fecha}</div>
                     ${badgesHtml}
                 </div>
             </summary>
+
+
+
+            
             <div class="denuncia-card__content">
                 <div class="denuncia-card__header">
                     ${miniaturaHtml}
