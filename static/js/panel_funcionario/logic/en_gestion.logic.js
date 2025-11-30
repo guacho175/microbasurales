@@ -5,7 +5,7 @@ export function crearGestorEstados({ esFiscalizador, esAdministrador, normalizar
             return estadoActual === "realizado";
         }
         if (esFiscalizador) {
-            return estadoActual === "pendiente" || estadoActual === "en_gestion";
+            return estadoActual === "pendiente";
         }
         return false;
     }
@@ -21,7 +21,7 @@ export function crearGestorEstados({ esFiscalizador, esAdministrador, normalizar
 
         if (esFiscalizador) {
             if (estadoActual === "pendiente") {
-                return [estadoActual, "en_gestion"];
+                return [estadoActual, "en_gestion", "rechazada"];
             }
             if (estadoActual === "en_gestion") {
                 return [estadoActual, "realizado"];

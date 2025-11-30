@@ -1,6 +1,5 @@
 import { clonarContenido, limpiarElemento, actualizarContador } from "../utils/dom.js";
 import { construirAccordionPendiente } from "../ui/accordionPendientes.ui.js";
-import { crearTarjetaDenuncia } from "../ui/tarjetaDenuncia.ui.js";
 
 export function crearGestorPendientes({
     esFiscalizador,
@@ -96,29 +95,14 @@ export function crearGestorPendientes({
             return;
         }
 
-        if (!esFiscalizador) {
-            denuncias.forEach((denuncia) => {
-                contenedor.appendChild(crearTarjetaDenuncia(denuncia, helpers));
-            });
-            actualizarContador(contador, denuncias.length);
-            return;
-        }
-
-        const accordion = document.createElement("div");
-        accordion.className = "accordion";
-        accordion.id = "pendientes-accordion";
-
         denuncias.forEach((denuncia) => {
             const item = construirAccordionPendiente(denuncia, helpers);
             if (helpers.inicializarFormulario) {
                 helpers.inicializarFormulario(item);
             }
-            accordion.appendChild(item);
+            contenedor.appendChild(item);
         });
-
-        contenedor.appendChild(accordion);
-        prepararAsignacionPendientes(accordion);
-
+        prepararAsignacionPendientes(contenedor);
         actualizarContador(contador, denuncias.length);
     }
 

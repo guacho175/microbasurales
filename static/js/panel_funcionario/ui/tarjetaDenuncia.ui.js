@@ -3,6 +3,7 @@ import { escapeAttribute, escapeHtml } from "../utils/html.js";
 import { construirCabeceraAccordion } from "./accordionHeader.ui.js";
 
 
+
 export function construirFormularioGestion(denuncia, helpers) {
     const {
         puedeEditarDenuncia,
@@ -11,7 +12,12 @@ export function construirFormularioGestion(denuncia, helpers) {
         obtenerConfigEstado,
         obtenerTextoAyudaEstado,
         esFiscalizador,
+        esAdministrador,
     } = helpers;
+
+    if (esFiscalizador && normalizarEstado(denuncia.estado) !== "pendiente") {
+        return "";
+    }
 
     if (!puedeEditarDenuncia || !puedeEditarDenuncia(denuncia)) {
         return "";
@@ -39,13 +45,12 @@ export function construirFormularioGestion(denuncia, helpers) {
     if (reporteCuadrilla && typeof reporteCuadrilla === "object") {
         reporteCuadrilla = reporteCuadrilla.comentario || "";
     }
-    const puedeEditarReporte = esFiscalizador && estadoActual === "en_gestion";
-    const reporteHelpText = puedeEditarReporte
-        ? "Adjunta la información entregada por la cuadrilla municipal."
-        : "";
-    const reporteAtributos = puedeEditarReporte ? "" : "readonly";
+    const mostrarReporteCuadrillaGroup = esFiscalizador && estadoActual === 'en_gestion';
+    const puedeEditarReporte = esFiscalizador && estadoActual === 'en_gestion';
+    const reporteHelpText = puedeEditarReporte ? "Adjunta la información entregada por la cuadrilla municipal." : "";
+    const reporteAtributos = !puedeEditarReporte ? "readonly" : "";
     const puedeRechazarDenuncia =
-        esFiscalizador && (estadoActual === "pendiente" || estadoActual === "en_gestion");
+        esFiscalizador && estadoActual === "pendiente";
     const botonRechazoHtml = puedeRechazarDenuncia
         ? `<button type="button" class="btn btn-outline-danger btn-sm w-100 mt-2 btn-rechazar-denuncia" data-denuncia-id="${escapeAttribute(
               denuncia.id
@@ -113,6 +118,7 @@ export function construirFormularioGestion(denuncia, helpers) {
                     }
                 </div>
                 ${selectorCuadrilla}
+                ${mostrarReporteCuadrillaGroup ? `
                 <div class="mb-2 reporte-cuadrilla-group">
                     <label class="form-label">Reporte de cuadrilla</label>
                     <textarea class="form-control form-control-sm" name="reporte_cuadrilla" ${reporteAtributos}>${escapeHtml(
@@ -124,6 +130,7 @@ export function construirFormularioGestion(denuncia, helpers) {
                             : ""
                     }
                 </div>
+                ` : ''}
                 <button type="submit" class="btn btn-sm btn-background w-100">Guardar cambios</button>
             </form>
             ${botonRechazoHtml}
@@ -176,7 +183,7 @@ export function construirDenunciaHtml(denuncia, helpers) {
             </div>`
         : "";
 
-    const reporteDetalleHtml = denuncia.reporte_cuadrilla
+    const reporteDetalleHtml = denuncia.reporte_cuadrilla && esAdministrador && (estadoNormalizado === 'realizado' || estadoNormalizado === 'finalizado')
         ? `<article class="denuncia-card__reporte">
                 <p class="mb-1">${escapeHtml(denuncia.reporte_cuadrilla.comentario || "")}</p>
                 ${
@@ -221,136 +228,110 @@ export function construirDenunciaHtml(denuncia, helpers) {
         : "";
 
     return `
-        <details class="denuncia-card__details" open>
-            <summary class="denuncia-card__summary d-flex gap-2 align-items-center">
-                <span class="denuncia-card__estado" style="background-color: ${escapeAttribute(color)}"></span>
-                <div>
-                    <div class="fw-semibold">${construirCabeceraAccordion(denuncia)}</div>
-                    <div class="small text-muted">${estadoEtiqueta} • ${fecha}</div>
-                    ${badgesHtml}
-                </div>
-            </summary>
-
-
-
-            
-            <div class="denuncia-card__content">
-                <div class="denuncia-card__header">
-                    ${miniaturaHtml}
-                    <div class="denuncia-card__meta">
-                        <p class="denuncia-card__description">${descripcion}</p>
-                        <div class="denuncia-card__info">
-                            <span class="badge" style="background-color:${escapeAttribute(
-                                color
-                            )};color:#fff">${estadoEtiqueta}</span>
-                            <span class="badge bg-light text-dark">Zona: ${zona}</span>
-                        </div>
-                        <ul class="denuncia-card__attributes">
-                            <li><span>Dirección</span><strong>${direccionTextual}</strong></li>
-                            <li><span>Coordenadas</span><strong>${
-                                coordenadas ? escapeHtml(coordenadas) : "Sin coordenadas disponibles"
-                            }</strong></li>
-                        </ul>
+        <div class="denuncia-card__content">
+            <div class="denuncia-card__header">
+                ${miniaturaHtml}
+                <div class="denuncia-card__meta">
+                    <p class="denuncia-card__description">${descripcion}</p>
+                    <div class="denuncia-card__info">
+                        <span class="badge" style="background-color:${escapeAttribute(
+                            color
+                        )};color:#fff">${estadoEtiqueta}</span>
+                        <span class="badge bg-light text-dark">Zona: ${zona}</span>
                     </div>
+                    <ul class="denuncia-card__attributes">
+                        <li><span>Dirección</span><strong>${direccionTextual}</strong></li>
+                        <li><span>Coordenadas</span><strong>${
+                            coordenadas ? escapeHtml(coordenadas) : "Sin coordenadas disponibles"
+                        }</strong></li>
+                    </ul>
                 </div>
-                <div class="denuncia-card__body">
-                    <section class="denuncia-card__detail-group">
-                        <h6>Datos del denunciante</h6>
-                        <ul class="denuncia-card__detail-list">
-                            <li><span>Nombre</span><strong>${denuncianteNombre}</strong></li>
-                            <li><span>Rol</span><strong>${denuncianteRol}</strong></li>
-                            <li><span>ID usuario</span><strong>${denuncianteId}</strong></li>
-                        </ul>
-                    </section>
-                    <section class="denuncia-card__detail-group">
-                        <h6>Ubicación y coordenadas</h6>
-                        <ul class="denuncia-card__detail-list">
-                            <li><span>Coordenadas</span><strong>${
-                                coordenadas ? escapeHtml(coordenadas) : "Sin coordenadas disponibles"
-                            }</strong></li>
-                            <li><span>Referencia textual</span><strong>${direccionTextual}</strong></li>
-                        </ul>
-                    </section>
-                    <section class="denuncia-card__detail-group">
-                        <h6>Estado de la denuncia</h6>
-                        <ul class="denuncia-card__detail-list">
-                            <li><span>Estado actual</span><strong>${estadoEtiqueta}</strong></li>
-                            <li><span>Cuadrilla asignada</span><strong>${cuadrilla}</strong></li>
-                            <li><span>Jefe designado</span><strong>${jefeAsignadoTexto}</strong></li>
-                        </ul>
-                    </section>
-                    <section class="denuncia-card__detail-group">
-                        <h6>Reporte de cuadrilla</h6>
-                        ${reporteDetalleHtml}
-                    </section>
-                </div>
-                ${rechazoDetalleHtml}
-                ${galeriaHtml}
-                ${formularioGestionHtml}
             </div>
-        </details>
+            <div class="denuncia-card__body">
+                <section class="denuncia-card__detail-group">
+                    <h6>Datos del denunciante</h6>
+                    <ul class="denuncia-card__detail-list">
+                        <li><span>Nombre</span><strong>${denuncianteNombre}</strong></li>
+                        <li><span>Rol</span><strong>${denuncianteRol}</strong></li>
+                        <li><span>ID usuario</span><strong>${denuncianteId}</strong></li>
+                    </ul>
+                </section>
+                <section class="denuncia-card__detail-group">
+                    <h6>Ubicación y coordenadas</h6>
+                    <ul class="denuncia-card__detail-list">
+                        <li><span>Coordenadas</span><strong>${
+                            coordenadas ? escapeHtml(coordenadas) : "Sin coordenadas disponibles"
+                        }</strong></li>
+                        <li><span>Referencia textual</span><strong>${direccionTextual}</strong></li>
+                    </ul>
+                </section>
+                <section class="denuncia-card__detail-group">
+                    <h6>Estado de la denuncia</h6>
+                    <ul class="denuncia-card__detail-list">
+                        <li><span>Estado actual</span><strong>${estadoEtiqueta}</strong></li>
+                        <li><span>Cuadrilla asignada</span><strong>${cuadrilla}</strong></li>
+                        <li><span>Jefe designado</span><strong>${jefeAsignadoTexto}</strong></li>
+                    </ul>
+                </section>
+                <section class="denuncia-card__detail-group">
+                    <h6>Reporte de cuadrilla</h6>
+                    ${reporteDetalleHtml}
+                </section>
+            </div>
+            ${rechazoDetalleHtml}
+            ${galeriaHtml}
+            ${formularioGestionHtml}
+        </div>
     `;
 }
 
-export function crearTarjetaDenuncia(denuncia, helpers, opciones = {}) {
-    const { mostrarAcciones = true } = opciones;
-    const item = document.createElement("article");
-    item.className = "denuncia-card";
-    item.dataset.denunciaId = String(denuncia.id);
-    item.dataset.id = String(denuncia.id);
-    item.innerHTML = construirDenunciaHtml(denuncia, helpers);
+export function crearDenunciaCard({ denuncia, headerHtml, detallesHtml }) {
+    const article = document.createElement("article");
+    article.className = "denuncia-card";
+    article.dataset.denunciaId = String(denuncia.id);
 
-    if (mostrarAcciones) {
-        const acciones = document.createElement("div");
-        acciones.className = "denuncia-card__actions";
+    // 1. Crear el header
+    const header = document.createElement("header");
+    header.className = "denuncia-card__summary";
+    header.innerHTML = headerHtml;
+    article.appendChild(header);
 
-        const btnVer = document.createElement("button");
-        btnVer.type = "button";
-        btnVer.className = "btn btn-outline-secondary btn-xs";
-        btnVer.textContent = "Mapa";
-        btnVer.addEventListener("click", () => {
-            helpers.centrarDenunciaEnMapa(denuncia.id, { enfocarFormulario: false });
-        });
-        acciones.appendChild(btnVer);
+    // 2. Crear el contenedor del acordeón
+    const accordionContainer = document.createElement("div");
+    accordionContainer.className = "accordion denuncia-card__accordion";
+    accordionContainer.id = `accordion-denuncia-${denuncia.id}`;
 
-        const btnDetalles = document.createElement("button");
-        btnDetalles.type = "button";
-        btnDetalles.className = "btn btn-outline-secondary btn-xs";
-        btnDetalles.textContent = "Detalles";
-        btnDetalles.addEventListener("click", () => {
-            const detalle = item.querySelector(".denuncia-card__details");
-            if (detalle) {
-                detalle.open = !detalle.open;
-            }
-        });
-        acciones.appendChild(btnDetalles);
+    const accordionItem = document.createElement("div");
+    accordionItem.className = "accordion-item";
 
-        if (helpers.puedeEditarDenuncia(denuncia)) {
-            const btnEditar = document.createElement("button");
-            btnEditar.type = "button";
-            btnEditar.className = "btn btn-background btn-xs";
-            btnEditar.textContent = "Editar";
-            btnEditar.addEventListener("click", () => {
-                const detalle = item.querySelector(".denuncia-card__details");
-                if (detalle) {
-                    detalle.open = true;
-                }
-                const primerCampo = item.querySelector(
-                    ".update-form select, .update-form textarea, .update-form input"
-                );
-                if (primerCampo) {
-                    primerCampo.focus();
-                }
-            });
-            acciones.appendChild(btnEditar);
-        }
+    // 3. Crear el header del acordeón (el botón que se clickea)
+    const accordionHeader = document.createElement("h2");
+    accordionHeader.className = "accordion-header";
+    accordionHeader.innerHTML = `
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-denuncia-${denuncia.id}" aria-expanded="false" aria-controls="collapse-denuncia-${denuncia.id}">
+            Ver detalles completos
+        </button>
+    `;
 
-        item.appendChild(acciones);
-    }
+    // 4. Crear el cuerpo del acordeón (el contenido colapsable)
+    const accordionCollapse = document.createElement("div");
+    accordionCollapse.id = `collapse-denuncia-${denuncia.id}`;
+    accordionCollapse.className = "accordion-collapse collapse";
+    accordionCollapse.setAttribute("data-bs-parent", `#accordion-denuncia-${denuncia.id}`);
 
-    if (helpers.inicializarFormulario) {
-        helpers.inicializarFormulario(item);
-    }
+    const accordionBody = document.createElement("div");
+    accordionBody.className = "accordion-body";
+    accordionBody.innerHTML = detallesHtml;
+    accordionCollapse.appendChild(accordionBody);
 
-    return item;
+    // Ensamblar el item del acordeón
+    accordionItem.appendChild(accordionHeader);
+    accordionItem.appendChild(accordionCollapse);
+
+    // Ensamblar el contenedor del acordeón
+    accordionContainer.appendChild(accordionItem);
+
+    article.appendChild(accordionContainer);
+
+    return article;
 }

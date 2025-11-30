@@ -9,7 +9,7 @@ import { crearMapaManager } from "./mapa.logic.js";
 import { crearGestorPendientes } from "./pendientes.logic.js";
 import { crearGestorRechazo } from "./rechazo.logic.js";
 import { conectarFiltros } from "./filtros.logic.js";
-import { crearTarjetaDenuncia } from "../ui/tarjetaDenuncia.ui.js";
+import { construirAccordionPendiente } from "../ui/accordionPendientes.ui.js";
 
 export function initPanelFuncionario() {
     const mapaElemento = document.getElementById("mapa-denuncias");
@@ -525,7 +525,7 @@ export function initPanelFuncionario() {
             }
         } else {
             denuncias.forEach((denuncia) => {
-                contenedor.appendChild(crearTarjetaDenuncia(denuncia, helpersComunes));
+                contenedor.appendChild(construirAccordionPendiente(denuncia, helpersComunes));
             });
         }
 
