@@ -1,0 +1,202 @@
+* [33m46ba7a5[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mcodex/refactorizar-estructura-de-panel_funcionario[m[33m)[m Ignorar carpeta staticfiles en Git (.gitignore)
+* [33mc90c38b[m Refactor panel funcionario: lógica y UI
+* [33m7be9ad9[m Refactor: modularización completa del panel_funcionario y nuevos componentes UI
+* [33m98a4c41[m[33m ([m[1;31morigin/codex/refactorizar-estructura-de-panel_funcionario[m[33m)[m Refactor funcionario panel into modular JS
+* [33m6745819[m[33m ([m[1;32mfecth[m[33m)[m solución al crear funcionario
+* [33m80ba3e3[m Ajustes para despliegue AWS: settings.py, requirements, panel_funcionario
+* [33m991dead[m[33m ([m[1;31morigin/sprint2[m[33m)[m Remove media folder from repo and update .gitignore
+* [33m145d5b9[m Actualización de estilos, imágenes y templates antes del deploy AWS
+*   [33m9c63b72[m Merge pull request #136 from guacho175/main
+[32m|[m[33m\[m  
+[32m|[m *   [33mdcc37ca[m Merge pull request #134 from guacho175/sprint2
+[32m|[m [34m|[m[32m\[m  
+[32m|[m [34m|[m[32m/[m  
+[32m|[m[32m/[m[34m|[m   
+* [34m|[m   [33m6fd1932[m Merge pull request #132 from guacho175//compactar-vista-de-activos-en-denuncias
+[36m|[m[1;31m\[m [34m\[m  
+[36m|[m * [34m\[m   [33mc32e895[m Merge pull request #133 from guacho175/sprint3
+[36m|[m [1;32m|[m[1;33m\[m [34m\[m  
+[36m|[m [1;32m|[m * [34m\[m   [33mbdbf0dc[m Merge pull request #131 from guacho175/fix-card-structure-in-admin-panel
+[36m|[m [1;32m|[m [1;34m|[m[1;35m\[m [34m\[m  
+[36m|[m [1;32m|[m [1;34m|[m * [34m|[m [33m5df106a[m Refine denuncias panel cards
+[36m|[m [1;32m|[m [1;34m|[m[1;34m/[m [34m/[m  
+[36m|[m [1;32m|[m * [34m|[m   [33me472d4b[m Merge pull request #130 from guacho175/fix-noreversematch-in-panel_fiscalizador_activos
+[36m|[m [1;32m|[m [1;36m|[m[31m\[m [34m\[m  
+[36m|[m [1;32m|[m [1;36m|[m * [34m|[m [33m59f5e2b[m Remove unavailable jefes cuadrilla reverse in panel context
+[36m|[m [1;32m|[m [1;36m|[m[1;36m/[m [34m/[m  
+[36m|[m [1;32m|[m * [34m|[m   [33m562b09b[m Merge pull request #129 from guacho175//fix-fiscalizador-panel-and-restore-functionality
+[36m|[m [1;32m|[m [32m|[m[33m\[m [34m\[m  
+[36m|[m [1;32m|[m [32m|[m * [34m|[m [33m8dd3054[m Add safe jefe assignment flow for fiscalizador panel
+[36m|[m [1;32m|[m [32m|[m[32m/[m [34m/[m  
+[36m|[m [1;32m|[m * [34m|[m [33mc712f94[m Merge pull request #127 from guacho175/main
+[36m|[m [1;32m|[m [34m|[m[34m\[m[34m|[m 
+[36m|[m * [34m|[m [34m|[m [33md58d633[m Compactar panel de denuncias
+[36m|[m[36m/[m [34m/[m [34m/[m  
+* [34m|[m [34m|[m   [33m1f14b89[m Merge pull request #128 from guacho175/main
+[36m|[m[34m\[m [34m\[m [34m\[m  
+[36m|[m [34m|[m [34m|[m[34m/[m  
+[36m|[m [34m|[m[34m/[m[34m|[m   
+[36m|[m * [34m|[m [33m7eb51ec[m Merge pull request #126 from guacho175/sprint3
+[36m|[m [1;32m|[m[34m\[m[34m|[m 
+[36m|[m [1;32m|[m *   [33m8c9f30d[m Merge pull request #125 from guacho175/fix-critical-bug-in-denuncia-serializer
+[36m|[m [1;32m|[m [1;34m|[m[1;35m\[m  
+[36m|[m [1;32m|[m [1;34m|[m * [33m8680587[m Fix jefe de cuadrilla assignment serializer and UI
+[36m|[m [1;32m|[m [1;34m|[m[1;34m/[m  
+[36m|[m [1;32m|[m *   [33mb758682[m Merge pull request #123 from guacho175//fix-endpoint-for-listing-jefes-de-cuadrilla
+[36m|[m [1;32m|[m [1;36m|[m[31m\[m  
+[36m|[m [1;32m|[m [1;36m|[m * [33ma88d10c[m Fix jefes cuadrilla listing endpoint
+[36m|[m [1;32m|[m [1;36m|[m[1;36m/[m  
+[36m|[m [1;32m|[m *   [33m8ece633[m Merge pull request #121 from guacho175/codex/fix-critical-error-loading-jefes-de-cuadrilla
+[36m|[m [1;32m|[m [32m|[m[33m\[m  
+[36m|[m [1;32m|[m [32m|[m * [33m5db5adb[m Fix cuadrilla chief listing for fiscalizador panel
+[36m|[m [1;32m|[m [32m|[m[32m/[m  
+* [1;32m|[m [32m|[m   [33macd80f2[m Merge pull request #122 from guacho175//update-denuncia-detail-view
+[34m|[m[35m\[m [1;32m\[m [32m\[m  
+[34m|[m * [1;32m|[m [32m|[m [33mf05d98d[m Actualiza detalle de denuncia con estilos y visor de imagen
+[34m|[m[34m/[m [1;32m/[m [32m/[m  
+* [1;32m|[m [32m|[m   [33m134dba4[m Merge pull request #119 from guacho175/sprint3
+[36m|[m[32m\[m [1;32m\[m [32m\[m  
+[36m|[m [32m|[m [1;32m|[m[32m/[m  
+[36m|[m [32m|[m[32m/[m[1;32m|[m   
+[36m|[m * [1;32m|[m   [33mbedb8ea[m Merge pull request #118 from guacho175/sprint1
+[36m|[m [1;32m|[m[1;33m\[m [1;32m\[m  
+[36m|[m [1;32m|[m * [1;32m\[m   [33m76973c2[m Merge branch 'sprint3' into sprint1
+[36m|[m [1;32m|[m [1;34m|[m[1;32m\[m [1;32m\[m  
+[36m|[m [1;32m|[m [1;34m|[m[1;32m/[m [1;32m/[m  
+[36m|[m [1;32m|[m[1;32m/[m[1;34m|[m [1;32m|[m   
+[36m|[m * [1;34m|[m [1;32m|[m   [33m2495d89[m Merge pull request #117 from guacho175/main
+[36m|[m [1;36m|[m[1;32m\[m [1;34m\[m [1;32m\[m  
+[36m|[m [1;36m|[m [1;32m|[m [1;34m|[m[1;32m/[m  
+[36m|[m [1;36m|[m [1;32m|[m[1;32m/[m[1;34m|[m   
+[36m|[m [1;36m|[m * [1;34m|[m   [33maf5604d[m Merge pull request #114 from guacho175/sprint3
+[36m|[m [1;36m|[m [32m|[m[33m\[m [1;34m\[m  
+[36m|[m [1;36m|[m * [33m\[m [1;34m\[m   [33m3baa32f[m Merge pull request #113 from guacho175/sprint1
+[36m|[m [1;36m|[m [34m|[m[35m\[m [33m\[m [1;34m\[m  
+[36m|[m [1;36m|[m * [35m\[m [33m\[m [1;34m\[m   [33m3bce9c0[m Merge pull request #108 from guacho175/sprint2
+[36m|[m [1;36m|[m [36m|[m[36m\[m [35m\[m [33m\[m [1;34m\[m  
+[36m|[m [1;36m|[m[36m_[m[36m|[m[36m/[m [35m/[m [33m/[m [1;34m/[m  
+[36m|[m[36m/[m[1;36m|[m [36m|[m [35m|[m [33m|[m [1;34m|[m   
+[36m|[m * [36m|[m [35m|[m [33m|[m [1;34m|[m   [33m3e0c590[m Merge pull request #116 from guacho175/remove-municipal-address-from-html-templates
+[36m|[m [33m|[m[1;33m\[m [36m\[m [35m\[m [33m\[m [1;34m\[m  
+[36m|[m [33m|[m [1;33m|[m[33m_[m[36m|[m[33m_[m[35m|[m[33m/[m [1;34m/[m  
+[36m|[m [33m|[m[33m/[m[1;33m|[m [36m|[m [35m|[m [1;34m|[m   
+[36m|[m [33m|[m * [36m|[m [35m|[m [1;34m|[m [33m3de2778[m Remove direccion municipal display and auto zone
+[36m|[m [33m|[m[33m/[m [36m/[m [35m/[m [1;34m/[m  
+[36m|[m * [36m|[m [35m|[m [1;34m|[m   [33md1d38fb[m Merge pull request #111 from guacho175//restructure-navigation-bar-in-base.html
+[36m|[m [1;34m|[m[1;35m\[m [36m\[m [35m\[m [1;34m\[m  
+[36m|[m [1;34m|[m * [36m|[m [35m|[m [1;34m|[m [33m6338404[m Reestructura la barra de navegación
+[36m|[m [1;34m|[m[1;34m/[m [36m/[m [35m/[m [1;34m/[m  
+[36m|[m * [36m|[m [35m|[m [1;34m|[m   [33m9b813dd[m Merge pull request #110 from guacho175//integrate-power-bi-dashboard-in-analytics-module
+[36m|[m [1;36m|[m[31m\[m [36m\[m [35m\[m [1;34m\[m  
+[36m|[m [1;36m|[m * [36m|[m [35m|[m [1;34m|[m [33m7e3e2cb[m Integrate Power BI dashboard view
+[36m|[m [1;36m|[m [36m|[m[36m/[m [35m/[m [1;34m/[m  
+[36m|[m * [36m|[m [35m|[m [1;34m|[m   [33m04b4e46[m Merge pull request #107 from guacho175/sprint2
+[36m|[m [32m|[m[36m\[m [36m\[m [35m\[m [1;34m\[m  
+[36m|[m [32m|[m[36m/[m [36m/[m [35m/[m [1;34m/[m  
+[36m|[m[36m/[m[32m|[m [36m|[m [35m|[m [1;34m|[m   
+[36m|[m * [36m|[m [35m|[m [1;34m|[m   [33mc9556e1[m Merge pull request #105 from guacho175/sprint2
+[36m|[m [36m|[m[35m\[m [36m\[m [35m\[m [1;34m\[m  
+[36m|[m [36m|[m [35m|[m[36m/[m [35m/[m [1;34m/[m  
+[36m|[m [36m|[m[36m/[m[35m|[m [35m|[m [1;34m|[m   
+[36m|[m * [35m|[m [35m|[m [1;34m|[m   [33mc0b74e3[m Merge pull request #102 from guacho175/sprint2
+[36m|[m [36m|[m[1;31m\[m [35m\[m [35m\[m [1;34m\[m  
+[36m|[m * [1;31m\[m [35m\[m [35m\[m [1;34m\[m   [33m8615014[m Merge pull request #96 from guacho175/sprint2
+[36m|[m [1;32m|[m[1;33m\[m [1;31m\[m [35m\[m [35m\[m [1;34m\[m  
+[36m|[m [1;32m|[m [1;33m|[m [1;31m|[m [35m|[m [35m|[m * [33ma2da8e2[m Merge pull request #115 from guacho175//implementar-cambios-en-modelo-y-codigo-de-django
+[36m|[m [1;32m|[m [1;33m|[m [1;31m|[m [35m|[m [35m|[m[35m/[m[1;35m|[m 
+[36m|[m [1;32m|[m [1;33m|[m [1;31m|[m [35m|[m [35m|[m * [33mb3f010a[m Add cuadrilla assignment workflow
+[36m|[m [1;32m|[m [1;33m|[m [1;31m|[m [35m|[m [35m|[m[35m/[m  
+[36m|[m [1;32m|[m [1;33m|[m [1;31m|[m [35m|[m *   [33mbeb74e7[m Merge pull request #112 from guacho175//add-reject-complaint-functionality-for-fiscalizador
+[36m|[m [1;32m|[m [1;33m|[m [1;31m|[m [35m|[m [1;36m|[m[31m\[m  
+[36m|[m [1;32m|[m [1;33m|[m [1;31m|[m [35m|[m [1;36m|[m * [33me34103c[m Add fiscalizador rejection workflow
+[36m|[m [1;32m|[m [1;33m|[m [1;31m|[m [35m|[m [1;36m|[m[1;36m/[m  
+[36m|[m [1;32m|[m [1;33m|[m [1;31m|[m [35m|[m * [33m87e8c2c[m Normalize state in construirDenunciaHtml function
+[36m|[m [1;32m|[m [1;33m|[m [1;31m|[m [35m|[m *   [33mdda93be[m Merge pull request #109 from guacho175/add-reject-functionality-to-denuncia-model
+[36m|[m [1;32m|[m [1;33m|[m [1;31m|[m [35m|[m [32m|[m[33m\[m  
+[36m|[m [1;32m|[m [1;33m|[m [1;31m|[m [35m|[m [32m|[m *   [33mac6df3c[m Merge branch 'sprint1' into codex/add-reject-functionality-to-denuncia-model
+[36m|[m [1;32m|[m [1;33m|[m [1;31m|[m [35m|[m [32m|[m [34m|[m[32m\[m  
+[36m|[m [1;32m|[m [1;33m|[m [1;31m|[m [35m|[m [32m|[m [34m|[m[32m/[m  
+[36m|[m [1;32m|[m [1;33m|[m [1;31m|[m [35m|[m [32m|[m[32m/[m[34m|[m   
+[36m|[m [1;32m|[m [1;33m|[m [1;31m|[m [35m|[m * [34m|[m   [33m4ac7f7c[m Merge pull request #106 from guacho175/sprint2
+[36m|[m [1;32m|[m [1;33m|[m [1;31m|[m [35m|[m [36m|[m[36m\[m [34m\[m  
+[36m|[m [1;32m|[m[36m_[m[1;33m|[m[36m_[m[1;31m|[m[36m_[m[35m|[m[36m_[m[36m|[m[36m/[m [34m/[m  
+[36m|[m[36m/[m[1;32m|[m [1;33m|[m [1;31m|[m [35m|[m [36m|[m [34m|[m   
+* [1;32m|[m [1;33m|[m [1;31m|[m [35m|[m [36m|[m [34m|[m [33mb2101b0[m Cleanup final: eliminar pycache, media residual y migración inválida
+[35m|[m [1;32m|[m[35m_[m[1;33m|[m[35m_[m[1;31m|[m[35m/[m [36m/[m [34m/[m  
+[35m|[m[35m/[m[1;32m|[m [1;33m|[m [1;31m|[m [36m|[m [34m|[m   
+[35m|[m [1;32m|[m [1;33m|[m [1;31m|[m * [34m|[m   [33m2dfef73[m Merge pull request #104 from guacho175/sprint2
+[35m|[m [1;32m|[m [1;33m|[m [1;31m|[m [1;32m|[m[35m\[m [34m\[m  
+[35m|[m [1;32m|[m[35m_[m[1;33m|[m[35m_[m[1;31m|[m[35m_[m[1;32m|[m[35m/[m [34m/[m  
+[35m|[m[35m/[m[1;32m|[m [1;33m|[m [1;31m|[m [1;32m|[m [34m|[m   
+* [1;32m|[m [1;33m|[m [1;31m|[m [1;32m|[m [34m|[m   [33mdf0f9b9[m Merge pull request #103 from guacho175/fix-onetoone-relationship-in-denuncia-model
+[1;31m|[m[1;35m\[m [1;32m\[m [1;33m\[m [1;31m\[m [1;32m\[m [34m\[m  
+[1;31m|[m [1;35m|[m[1;31m_[m[1;32m|[m[1;31m_[m[1;33m|[m[1;31m/[m [1;32m/[m [34m/[m  
+[1;31m|[m[1;31m/[m[1;35m|[m [1;32m|[m [1;33m|[m [1;32m|[m [34m|[m   
+[1;31m|[m * [1;32m|[m [1;33m|[m [1;32m|[m [34m|[m [33m55fb72f[m Ensure denuncia detail and cuadrilla reports stay in sync
+[1;31m|[m[1;31m/[m [1;32m/[m [1;33m/[m [1;32m/[m [34m/[m  
+[1;31m|[m [1;32m|[m [1;33m|[m [1;32m|[m * [33mec0eb7f[m feat: allow fiscalizadores to reject reports
+[1;31m|[m [1;32m|[m [1;33m|[m [1;32m|[m[1;32m/[m  
+[1;31m|[m [1;32m|[m [1;33m|[m *   [33m0e82b3e[m Merge pull request #101 from guacho175/sprint2
+[1;31m|[m [1;32m|[m [1;33m|[m [1;36m|[m[1;31m\[m  
+[1;31m|[m [1;32m|[m[1;31m_[m[1;33m|[m[1;31m_[m[1;36m|[m[1;31m/[m  
+[1;31m|[m[1;31m/[m[1;32m|[m [1;33m|[m [1;36m|[m   
+* [1;32m|[m [1;33m|[m [1;36m|[m   [33m77125c4[m Merge pull request #100 from guacho175/sprint1
+[32m|[m[1;36m\[m [1;32m\[m [1;33m\[m [1;36m\[m  
+[32m|[m [1;36m|[m [1;32m|[m[1;36m_[m[1;33m|[m[1;36m/[m  
+[32m|[m [1;36m|[m[1;36m/[m[1;32m|[m [1;33m|[m   
+[32m|[m * [1;32m|[m [1;33m|[m   [33m8d1bfb1[m Merge pull request #99 from guacho175/codex/add-user-management-functionality-to-django
+[32m|[m [34m|[m[35m\[m [1;32m\[m [1;33m\[m  
+[32m|[m [34m|[m * [1;32m|[m [1;33m|[m [33md3b7de9[m feat: add admin user management
+[32m|[m [34m|[m[34m/[m [1;32m/[m [1;33m/[m  
+* [34m|[m [1;32m|[m [1;33m|[m   [33m2fca694[m Merge pull request #98 from guacho175/codex/refactorizar-presentacion-visual-de-denuncias
+[36m|[m[1;31m\[m [34m\[m [1;32m\[m [1;33m\[m  
+[36m|[m * [34m|[m [1;32m|[m [1;33m|[m [33md601d1b[m Refactor layout of denuncias panel
+[36m|[m[36m/[m [34m/[m [1;32m/[m [1;33m/[m  
+* [34m|[m [1;32m|[m [1;33m|[m   [33m8a9f9b1[m Merge pull request #97 from guacho175/codex/refactorizar-panel-de-denuncias-en-django/js
+[1;33m|[m[1;33m\[m [34m\[m [1;32m\[m [1;33m\[m  
+[1;33m|[m [1;33m|[m[1;33m_[m[34m|[m[1;33m_[m[1;32m|[m[1;33m/[m  
+[1;33m|[m[1;33m/[m[1;33m|[m [34m|[m [1;32m|[m   
+[1;33m|[m * [34m|[m [1;32m|[m [33m3f9f08c[m Unify denuncia rendering across tabs
+[1;33m|[m[1;33m/[m [34m/[m [1;32m/[m  
+* [34m|[m [1;32m|[m [33m3caed68[m Merge pull request #95 from guacho175/sprint1
+[1;34m|[m[34m\[m[34m|[m [1;32m|[m 
+[1;34m|[m * [1;32m|[m   [33m119b44d[m Merge pull request #94 from guacho175/codex/create-complete-analitica-module-in-django
+[1;34m|[m [1;36m|[m[31m\[m [1;32m\[m  
+[1;34m|[m [1;36m|[m * [1;32m|[m [33mf9df2a5[m feat: agregar modulo analitico para administradores
+[1;34m|[m * [31m|[m [1;32m|[m   [33m344d2a5[m Merge pull request #93 from guacho175/sprint2
+[1;34m|[m [31m|[m[1;34m\[m [31m\[m [1;32m\[m  
+[1;34m|[m [31m|[m[1;34m/[m [31m/[m [1;32m/[m  
+[1;34m|[m[1;34m/[m[31m|[m [31m/[m [1;32m/[m   
+[1;34m|[m [31m|[m[31m/[m [1;32m/[m    
+* [31m|[m [1;32m|[m [33ma848316[m Merge pull request #92 from guacho175/sprint1
+[34m|[m[31m\[m[31m|[m [1;32m|[m 
+[34m|[m * [1;32m|[m   [33m171cf5a[m Merge pull request #90 from guacho175//fix-user-panel-display-and-menu-style
+[34m|[m [36m|[m[1;31m\[m [1;32m\[m  
+[34m|[m [36m|[m * [1;32m|[m [33m00ecdb8[m Fix user list name column and style admin nav
+[34m|[m [36m|[m[36m/[m [1;32m/[m  
+[34m|[m * [1;32m|[m   [33m9a12917[m Merge pull request #88 from guacho175//add-usuarios-del-sistema-view-for-admin
+[34m|[m [1;32m|[m[1;33m\[m [1;32m\[m  
+[34m|[m [1;32m|[m * [1;32m|[m [33m174cc28[m Add admin system users view
+[34m|[m [1;32m|[m[1;32m/[m [1;32m/[m  
+* [1;32m|[m [1;32m|[m   [33m8a21b24[m Merge pull request #91 from guacho175/codex/fix-view-for-jefe-de-cuadrilla-report
+[1;34m|[m[1;35m\[m [1;32m\[m [1;32m\[m  
+[1;34m|[m * [1;32m|[m [1;32m|[m [33mdaafde7[m Ensure cuadrilla reports finalize denuncias
+[1;34m|[m[1;34m/[m [1;32m/[m [1;32m/[m  
+* [1;32m|[m [1;32m|[m   [33m098e444[m Merge pull request #89 from guacho175//fix-jefe-de-cuadrilla-view-for-estados
+[1;36m|[m[31m\[m [1;32m\[m [1;32m\[m  
+[1;36m|[m * [1;32m|[m [1;32m|[m [33m67a5394[m Ensure cuadrilla reports mark operativo realizado
+[1;36m|[m[1;36m/[m [1;32m/[m [1;32m/[m  
+* [1;32m|[m [1;32m|[m   [33m98fa994[m Merge pull request #87 from guacho175//fix-reported-issues-with-realizado-state
+[32m|[m[33m\[m [1;32m\[m [1;32m\[m  
+[32m|[m * [1;32m|[m [1;32m|[m [33md994ee8[m Fix realizado state handling in denuncias panel
+[32m|[m[32m/[m [1;32m/[m [1;32m/[m  
+* [1;32m|[m [1;32m|[m [33m877d12c[m Merge pull request #86 from guacho175/sprint1
+[34m|[m[1;32m\[m[1;32m|[m [1;32m|[m 
+[34m|[m * [1;32m|[m   [33m7c68c54[m Merge pull request #85 from guacho175/sprint2
+[34m|[m [36m|[m[34m\[m [1;32m\[m  
+[34m|[m [36m|[m[34m/[m [1;32m/[m  
+[34m|[m[34m/[m[36m|[m [1;32m|[m   
+* [36m|[m [1;32m|[m   [33m095b7d5[m Merge pull request #84 from guacho175/main
+[1;32m|[m[1;32m\[m [36m\[m [1;32m\[m  
+[1;32m|[m [1;32m|[m [36m|[m[1;32m/[m  
+[1;32m|[m [1;32m|[m[1;32m/[m[36m|[m   

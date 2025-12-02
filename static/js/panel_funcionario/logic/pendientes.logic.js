@@ -1,4 +1,4 @@
-import { clonarContenido, limpiarElemento, actualizarContador } from "../utils/dom.js";
+import { clonarContenido, limpiarElemento, actualizarContador, renderList } from "../utils/dom.js";
 import { construirAccordionPendiente } from "../ui/accordionPendientes.ui.js";
 
 export function crearGestorPendientes({
@@ -78,32 +78,21 @@ export function crearGestorPendientes({
     }
 
     function renderPendientes(denuncias) {
-        if (!contenedor) {
-            return;
-        }
-
-        limpiarElemento(contenedor);
-
-        if (!denuncias.length) {
-            if (plantillaVacia) {
-                const vacio = clonarContenido(plantillaVacia);
-                if (vacio) {
-                    contenedor.appendChild(vacio);
+        renderList({
+            contenedor,
+            items: denuncias,
+            plantillaVacia,
+            contadorElemento: contador,
+            renderItem: (denuncia) => {
+                const item = construirAccordionPendiente(denuncia, helpers);
+                if (helpers.inicializarFormulario) {
+                    helpers.inicializarFormulario(item);
                 }
+                return item;
             }
-            actualizarContador(contador, denuncias.length);
-            return;
-        }
-
-        denuncias.forEach((denuncia) => {
-            const item = construirAccordionPendiente(denuncia, helpers);
-            if (helpers.inicializarFormulario) {
-                helpers.inicializarFormulario(item);
-            }
-            contenedor.appendChild(item);
         });
+
         prepararAsignacionPendientes(contenedor);
-        actualizarContador(contador, denuncias.length);
     }
 
     return {
