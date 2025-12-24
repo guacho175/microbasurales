@@ -1,12 +1,9 @@
-"""
-Django settings para desarrollo LOCAL del proyecto Microbasurales.
-Esta versión NO usa AWS, NO usa PythonAnywhere y NO usa RDS.
-Funciona con PostgreSQL LOCAL + STATICFILES + MEDIA en tu PC.
-"""
-
 import os
 from pathlib import Path
 from datetime import timedelta
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # ========================================
 # BASE DIR
@@ -14,23 +11,20 @@ from datetime import timedelta
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ========================================
-# SECURITY (LOCAL)
+# SECURITY
 # ========================================
-SECRET_KEY = "dev-secret-key-no-importa-en-local"
-DEBUG = True
+SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
 
-ALLOWED_HOSTS = [
-    "127.0.0.1",
-    "localhost",
-]
+DEBUG = os.getenv("DEBUG", "False") == "True"
 
-CSRF_TRUSTED_ORIGINS = []
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "*").split(",")
+
+CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if os.getenv("CSRF_TRUSTED_ORIGINS") else []
 
 # ========================================
 # APPS
 # ========================================
 INSTALLED_APPS = [
-    # Django base
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -38,11 +32,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # Terceros
+    # Third party
     'rest_framework',
     'corsheaders',
 
-    # Apps del proyecto
+    # Project apps
     'usuarios',
     'denuncias',
     'analitica',
@@ -54,7 +48,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',  # OK en local
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -66,7 +60,11 @@ MIDDLEWARE = [
 # URLS / WSGI
 # ========================================
 ROOT_URLCONF = 'config.urls'
+WSGI_APPLICATION = 'config.wsgi.application'
 
+# ========================================
+# TEMPLATES
+# ========================================
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -74,6 +72,7 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
@@ -82,19 +81,13 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'config.wsgi.application'
-
 # ========================================
-# BASE DE DATOS LOCAL (POSTGRESQL LOCAL)
+# DATABASE — SQLite (gratis, simple)
 # ========================================
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "microbasurales",    # Nombre de tu BD local
-        "USER": "postgres",          # Usuario local
-        "PASSWORD": "30102897",      # Tu contraseña local
-        "HOST": "127.0.0.1",         # SIEMPRE localhost en desarrollo
-        "PORT": "5432",
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 }
 
@@ -117,27 +110,26 @@ USE_I18N = True
 USE_TZ = True
 
 # ========================================
-# STATIC & MEDIA (LOCAL)
+# STATIC & MEDIA
 # ========================================
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [
-    BASE_DIR / "static",
-]
-STATIC_ROOT = BASE_DIR / "staticfiles"   # No se usa en local, pero no molesta
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+if DEBUG:
+    STATICFILES_DIRS = [BASE_DIR / "static"]
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / "media"
-
-# ========================================
-# POWER BI (NO SE USA EN LOCAL)
-# ========================================
-POWERBI_DASHBOARD_EMBED_URL = ""
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # ========================================
 # AUTH & USER MODEL
 # ========================================
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'usuarios.Usuario'
+
+LOGIN_URL = 'login_django'
+LOGIN_REDIRECT_URL = 'home_ciudadano'
+LOGOUT_REDIRECT_URL = 'login_django'
 
 # ========================================
 # REST + JWT
@@ -158,11 +150,12 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-LOGIN_URL = 'login_django'
-LOGIN_REDIRECT_URL = 'home_ciudadano'
-LOGOUT_REDIRECT_URL = 'login_django'
-
 # ========================================
-# CORS (permite desarrollo sin errores)
+# CORS
 # ========================================
 CORS_ALLOW_ALL_ORIGINS = True
+
+# ========================================
+# POWER BI (opcional)
+# ========================================
+POWERBI_DASHBOARD_EMBED_URL = os.getenv("POWERBI_DASHBOARD_EMBED_URL", "")
