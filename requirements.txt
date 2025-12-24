@@ -1,23 +1,9 @@
 Django==5.1.2
-# Framework principal del proyecto. Maneja rutas, modelos, vistas, ORM, autenticación y todo el backend.
-
 djangorestframework==3.15.2
-# Extensión para construir APIs REST. Proporciona serializadores, vistas y herramientas para endpoints JSON.
-
 djangorestframework-simplejwt==5.5.1
-# Módulo JWT necesario para autenticación basada en tokens entre frontend y backend.
-
 Pillow==12.0.0
-# Librería para procesar imágenes (guardar, redimensionar, validar). Necesaria para las fotos de denuncias.
-
 requests==2.32.3
-# Librería HTTP cliente. Se usa para llamar APIs externas (ej. georreferenciación, servicios externos).
-
 python-dotenv==1.0.1
-# Permite cargar variables de entorno desde un archivo .env (clave para settings sensibles y configuración de producción).
-
 psycopg2-binary==2.9.9
-# Driver para conectarse a PostgreSQL. Obligatorio cuando usas RDS o PostgreSQL local/EC2.
-
 gunicorn==21.2.0
-# Servidor WSGI para producción. Nginx se comunica con Gunicorn para ejecutar Django en EC2.
+django-cors-headers==4.9.0
