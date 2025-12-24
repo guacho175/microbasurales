@@ -17,10 +17,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
 
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
-# Permite leer hosts desde entorno
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
-
-# En caso de que venga vacío, permitir todos (evita crash)
 if not ALLOWED_HOSTS or ALLOWED_HOSTS == [""]:
     ALLOWED_HOSTS = ["*"]
 
@@ -56,6 +53,10 @@ INSTALLED_APPS = [
 # ========================================
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+
+    # 👉 WhiteNoise para servir estáticos
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -119,13 +120,17 @@ USE_I18N = True
 USE_TZ = True
 
 # ========================================
-# STATIC & MEDIA
+# STATIC & MEDIA (WhiteNoise)
 # ========================================
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+# En local puedes usar carpeta static/
 if DEBUG:
     STATICFILES_DIRS = [BASE_DIR / "static"]
+
+# 👉 WhiteNoise storage
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
