@@ -14,7 +14,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY
 # ========================================
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
-
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
@@ -53,10 +52,7 @@ INSTALLED_APPS = [
 # ========================================
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-
-    # 👉 WhiteNoise para servir estáticos
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # <-- WhiteNoise aquí
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -120,16 +116,17 @@ USE_I18N = True
 USE_TZ = True
 
 # ========================================
-# STATIC & MEDIA (WhiteNoise)
+# STATIC & MEDIA (PRODUCCIÓN)
 # ========================================
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# En local puedes usar carpeta static/
-if DEBUG:
-    STATICFILES_DIRS = [BASE_DIR / "static"]
+# Donde están tus static en el repo (static/css, static/img, etc.)
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
 
-# 👉 WhiteNoise storage
+# WhiteNoise: almacenamiento optimizado
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = '/media/'
