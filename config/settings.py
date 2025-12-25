@@ -20,15 +20,16 @@ if not SECRET_KEY:
 
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = [
-    "localhost",
-    "127.0.0.1",
-    "microbasurales.24bagivb4k9y.us-east.codeengine.appdomain.cloud",
-]
+ALLOWED_HOSTS = os.getenv(
+    "ALLOWED_HOSTS",
+    "localhost,127.0.0.1"
+).split(",")
 
-CSRF_TRUSTED_ORIGINS = [
-    "https://microbasurales.24ayomlwo5nq.us-east.codeengine.appdomain.cloud",
-]
+CSRF_TRUSTED_ORIGINS = os.getenv(
+    "CSRF_TRUSTED_ORIGINS",
+    ""
+).split(",") if os.getenv("CSRF_TRUSTED_ORIGINS") else []
+
 
 
 # ========================================
