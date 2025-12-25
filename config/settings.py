@@ -23,7 +23,7 @@ DEBUG = os.environ.get("DEBUG", "False") == "True"
 ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
-    "microbasurales.24ayomlwo5nq.us-east.codeengine.appdomain.cloud",
+    "microbasurales.24bagivb4k9y.us-east.codeengine.appdomain.cloud",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
