@@ -10,6 +10,16 @@ load_dotenv()
 # ========================================
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# ========================================
+# SECRET KEY & DEBUG  (🔥 FALTABAN 🔥)
+# ========================================
+SECRET_KEY = os.environ.get("SECRET_KEY")
+
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY no está definido en variables de entorno")
+
+DEBUG = os.environ.get("DEBUG", "False") == "True"
+
 ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
