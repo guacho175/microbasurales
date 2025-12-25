@@ -16,15 +16,29 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
-if not ALLOWED_HOSTS or ALLOWED_HOSTS == [""]:
-    ALLOWED_HOSTS = ["*"]
+# Dominio de Code Engine
+CODEENGINE_DOMAIN = "microbasurales.24ayomlwo5nq.us-east.codeengine.appdomain.cloud"
 
-CSRF_TRUSTED_ORIGINS = (
-    os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
-    if os.getenv("CSRF_TRUSTED_ORIGINS")
-    else []
-)
+# ALLOWED_HOSTS desde env + dominio CE
+env_hosts = os.getenv("ALLOWED_HOSTS", "")
+ALLOWED_HOSTS = [h.strip() for h in env_hosts.split(",") if h.strip()]
+
+if not ALLOWED_HOSTS:
+    ALLOWED_HOSTS = [
+        CODEENGINE_DOMAIN,
+        "localhost",
+        "127.0.0.1",
+    ]
+
+# CSRF trusted origins
+env_csrf = os.getenv("CSRF_TRUSTED_ORIGINS", "")
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in env_csrf.split(",") if o.strip()]
+
+if not CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS = [
+        f"https://{CODEENGINE_DOMAIN}",
+    ]
+
 
 # ========================================
 # APPS
