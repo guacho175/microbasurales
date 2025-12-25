@@ -10,34 +10,15 @@ load_dotenv()
 # ========================================
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# ========================================
-# SECURITY
-# ========================================
-SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
-DEBUG = os.getenv("DEBUG", "False") == "True"
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "microbasurales.24ayomlwo5nq.us-east.codeengine.appdomain.cloud",
+]
 
-# Dominio de Code Engine
-CODEENGINE_DOMAIN = "microbasurales.24ayomlwo5nq.us-east.codeengine.appdomain.cloud"
-
-# ALLOWED_HOSTS desde env + dominio CE
-env_hosts = os.getenv("ALLOWED_HOSTS", "")
-ALLOWED_HOSTS = [h.strip() for h in env_hosts.split(",") if h.strip()]
-
-if not ALLOWED_HOSTS:
-    ALLOWED_HOSTS = [
-        CODEENGINE_DOMAIN,
-        "localhost",
-        "127.0.0.1",
-    ]
-
-# CSRF trusted origins
-env_csrf = os.getenv("CSRF_TRUSTED_ORIGINS", "")
-CSRF_TRUSTED_ORIGINS = [o.strip() for o in env_csrf.split(",") if o.strip()]
-
-if not CSRF_TRUSTED_ORIGINS:
-    CSRF_TRUSTED_ORIGINS = [
-        f"https://{CODEENGINE_DOMAIN}",
-    ]
+CSRF_TRUSTED_ORIGINS = [
+    "https://microbasurales.24ayomlwo5nq.us-east.codeengine.appdomain.cloud",
+]
 
 
 # ========================================
