@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      SECRET_KEY: clave-exclusiva-de-pruebas-ci-sin-uso-fuera-del-workflow
+      DEBUG: "True"
+      DB_ENGINE: sqlite
+      GEOCODING_ENABLED: "False"
+      NOTIFICACIONES_EMAIL_ENABLED: "False"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar librerías de sistema para mysqlclient
+        run: sudo apt-get update && sudo apt-get install -y default-libmysqlclient-dev build-essential pkg-config
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Verificar migraciones al día
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Django check
+        run: python manage.py check
+
+      - name: Tests
+        run: python manage.py test --verbosity 2
+
+      - name: Check de despliegue (DEBUG=False)
+        env:
+          DEBUG: "False"
+          ALLOWED_HOSTS: example.pythonanywhere.com
+          CSRF_TRUSTED_ORIGINS: https://example.pythonanywhere.com
+        run: python manage.py check --deploy

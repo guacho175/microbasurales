@@ -1,0 +1,37 @@
+# Entornos y configuración local
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+# Python / Django
+__pycache__/
+*.py[cod]
+*.sqlite3
+media/
+staticfiles/
+*.log
+
+# Calidad y herramientas
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# IDE y sistema operativo
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Documentación y artefactos internos
+AGENTS.md
+CLAUDE.md
+docs-internos/
+private/
+auditoria/
+entregables/
+*.docx
