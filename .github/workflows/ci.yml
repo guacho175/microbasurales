@@ -19,7 +19,7 @@ jobs:
       GEOCODING_ENABLED: "False"
       NOTIFICACIONES_EMAIL_ENABLED: "False"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Configurar Python
         uses: actions/setup-python@v5
