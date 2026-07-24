@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}">
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.title = 'Tu Barrio Limpio';
+    });
+</script>
+{% endblock extra_head %}
+
+{% block menu %}{% endblock %}
+{% block aside %}{% endblock %}
+
+{% block contenido %}
+
+<!-- Fondo -->
+<div class="auth-background"></div>
+<div class="auth-overlay"></div>
+
+<div class="container auth-container">
+
+    <div class="auth-header">
+        <h1>Tu Barrio Limpio</h1>
+        <p>Únete a Tu Barrio Limpio y ayuda a reportar, monitorear y resolver los focos de microbasurales en tu comunidad.</p>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-5 auth-card">
+
+            <div class="auth-box">
+
+                <h2>Iniciar Sesión</h2>
+                <p class="mb-4">Accede con tus credenciales para continuar colaborando con tu comunidad.</p>
+
+                <form method="POST" novalidate>
+                    {% csrf_token %}
+
+                    <label class="form-label text-white">Nombre de usuario</label>
+                    <input type="text" name="username" class="auth-input" placeholder="Ingresa tu usuario" required>
+
+                    <label class="form-label text-white">Contraseña</label>
+                    <input type="password" name="password" class="auth-input" placeholder="Ingresa tu contraseña" required>
+
+                    <button type="submit" class="auth-btn">Ingresar</button>
+
+                    <p class="mt-3 text-white">¿No tienes cuenta? <a class="auth-link text-decoration-underline" href="{% url 'register' %}">Regístrate aquí</a></p>
+
+                    {% if messages %}
+                        {% for message in messages %}
+                            {% if 'error' in message.tags %}
+                                <div class="alert alert-danger mt-3">{{ message }}</div>
+                            {% elif 'success' in message.tags %}
+                                <div class="alert alert-success mt-3">{{ message }}</div>
+                            {% else %}
+                                <div class="alert alert-info mt-3">{{ message }}</div>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+
+                </form>
+
+            </div>
+
+        </div>
+    </div>
+
+
+</div>
+
+<footer class="text-center py-3 auth-footer">
+    <small>
+        © {% now "Y" %} Tu Barrio Limpio. Todos los derechos reservados. |
+        <a href="mailto:contacto@tubarriolimpio.cl">contacto@tubarriolimpio.cl</a> |
+        <a href="{% url 'aviso_legal' %}">Aviso Legal</a> |
+        <a href="{% url 'politica_privacidad' %}">Política de Privacidad</a>
+    </small>
+</footer>
+
+{% endblock %}
